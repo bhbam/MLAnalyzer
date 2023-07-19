@@ -3,14 +3,14 @@ import FWCore.ParameterSet.Config as cms
 import FWCore.ParameterSet.VarParsing as VarParsing
 
 options = VarParsing.VarParsing('analysis')
-options.register('skipEvents', 
-    default=0, 
+options.register('skipEvents',
+    default=0,
     mult=VarParsing.VarParsing.multiplicity.singleton,
     mytype=VarParsing.VarParsing.varType.int,
     info = "skipEvents")
 # TODO: put this option in cmsRun scripts
-options.register('processMode', 
-    default='JetLevel', 
+options.register('processMode',
+    default='JetLevel',
     mult=VarParsing.VarParsing.multiplicity.singleton,
     mytype=VarParsing.VarParsing.varType.string,
     info = "process mode: JetLevel or EventLevel")
@@ -18,8 +18,11 @@ options.parseArguments()
 
 process = cms.Process("FEVTAnalyzer")
 process.load("FWCore.MessageService.MessageLogger_cfi")
-process.load("Configuration.StandardSequences.GeometryDB_cff")
+# process.load("Configuration.StandardSequences.GeometryDB_cff")
+process.load("TrackingTools/TransientTrack/TransientTrackBuilder_cfi")
+process.load('Configuration.Geometry.GeometryRecoDB_cff')
 process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
+process.load("Configuration.StandardSequences.MagneticField_cff")
 #process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_condDBv2_cff')
 #process.load("Configuration.StandardSequences.GeometryRecoDB_cff")
 #process.load("Geometry.CMSCommonData.cmsIdealGeometryXML_cfi");
@@ -31,8 +34,8 @@ process.es_prefer_GlobalTag = cms.ESPrefer('PoolDBESSource','GlobalTag')
 
 #process.load('PhysicsTools.PatAlgos.patSequences_cff')
 
-process.maxEvents = cms.untracked.PSet( 
-    input = cms.untracked.int32(options.maxEvents) 
+process.maxEvents = cms.untracked.PSet(
+    input = cms.untracked.int32(options.maxEvents)
     )
 
 process.source = cms.Source("PoolSource",

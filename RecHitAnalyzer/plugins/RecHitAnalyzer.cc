@@ -42,13 +42,13 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
   jetTagCollectionT_      = consumes<reco::JetTagCollection>(iConfig.getParameter<edm::InputTag>("jetTagCollection"));
   ipTagInfoCollectionT_   = consumes<std::vector<reco::CandIPTagInfo> > (iConfig.getParameter<edm::InputTag>("ipTagInfoCollection"));
 
-  siPixelRecHitCollectionT_ = consumes<SiPixelRecHitCollection>(iConfig.getParameter<edm::InputTag>("siPixelRecHitCollection"));
+  //siPixelRecHitCollectionT_ = consumes<SiPixelRecHitCollection>(iConfig.getParameter<edm::InputTag>("siPixelRecHitCollection"));
 
   //siStripRecHitCollectionT_ = iConfig.getParameter<std::vector<edm::InputTag> >("siStripRecHitCollection");
-  siStripMatchedRecHitCollectionT_ = consumes<SiStripMatchedRecHit2DCollection>(iConfig.getParameter<edm::InputTag>("siStripMatchedRecHitCollection"));
-  siStripRPhiRecHitCollectionT_    = consumes<SiStripRecHit2DCollection>(iConfig.getParameter<edm::InputTag>("siStripRphiRecHits"));
-  siStripStereoRecHitCollectionT_  = consumes<SiStripRecHit2DCollection>(iConfig.getParameter<edm::InputTag>("siStripStereoRecHits"));
- 
+  //siStripMatchedRecHitCollectionT_ = consumes<SiStripMatchedRecHit2DCollection>(iConfig.getParameter<edm::InputTag>("siStripMatchedRecHitCollection"));
+  //siStripRPhiRecHitCollectionT_    = consumes<SiStripRecHit2DCollection>(iConfig.getParameter<edm::InputTag>("siStripRphiRecHits"));
+  //siStripStereoRecHitCollectionT_  = consumes<SiStripRecHit2DCollection>(iConfig.getParameter<edm::InputTag>("siStripStereoRecHits"));
+
   metCollectionT_           = consumes<reco::PFMETCollection>(iConfig.getParameter<edm::InputTag>("metCollection"));
 
   tauCollectionT_           = consumes<reco::PFTauCollection>(iConfig.getParameter<edm::InputTag>("tauCollection"));
@@ -62,7 +62,7 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
   processName_              = iConfig.getUntrackedParameter<std::string>("processName","HLT");
   //triggerResultsToken_      = consumes<edm::TriggerResults> (iConfig.getUntrackedParameter<edm::InputTag>("triggerResultsTag", edm::InputTag("TriggerResults", "", "HLT")));
   triggerResultsToken_      = consumes<edm::TriggerResults> (iConfig.getParameter<edm::InputTag>("triggerResultsTag"));
-  
+
   jetSFType_                = iConfig.getParameter<std::string>("srcJetSF");
   jetResPtType_             = iConfig.getParameter<std::string>("srcJetResPt");
   jetResPhiType_            = iConfig.getParameter<std::string>("srcJetResPhi");
@@ -158,7 +158,7 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
   //branchesTRKvolumeAtEBEE(RHTree, fs);
   //branchesTRKvolumeAtECAL(RHTree, fs);
   branchesJetInfoAtECALstitched( RHTree, fs);
-  branchesScalarInfo( RHTree, fs);  
+  branchesScalarInfo( RHTree, fs);
   branchesTRKlayersAtECALstitched(RHTree, fs);
 
   // For FC inputs
@@ -206,10 +206,10 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   fillECALstitched( iEvent, iSetup );
   fillHCALatEBEE( iEvent, iSetup );
   fillTracksAtEBEE( iEvent, iSetup );
-  for (unsigned int i=0;i<Nproj;i++)
-  {
-    fillTracksAtECALstitched( iEvent, iSetup, i );
-  }
+  //  for (unsigned int i=0;i<Nproj;i++)
+  //  {
+  //   fillTracksAtECALstitched( iEvent, iSetup, i );
+  //  }
   fillPFCandsAtEBEE( iEvent, iSetup );
   fillPFCandsAtECALstitched( iEvent, iSetup );
   //fillTRKlayersAtEBEE( iEvent, iSetup );
@@ -218,10 +218,10 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   //fillTRKvolumeAtECAL( iEvent, iSetup );
   fillJetInfoAtECALstitched( iEvent, iSetup );
   fillScalarInfo( iEvent, iSetup );
-  for (unsigned int i=0;i<Nhitproj;i++)
-  {
-    fillTRKlayersAtECALstitched( iEvent, iSetup, i );
-  }
+  //  for (unsigned int i=0;i<Nhitproj;i++)
+  //  {
+  //    fillTRKlayersAtECALstitched( iEvent, iSetup, i );
+  //  }
 
 
   ////////////// 4-Momenta //////////
@@ -236,7 +236,7 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
 
 // ------------ method called once each job just before starting event loop  ------------
-void 
+void
 RecHitAnalyzer::beginJob()
 {
   nTotal = 0;
@@ -244,8 +244,8 @@ RecHitAnalyzer::beginJob()
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
-void 
-RecHitAnalyzer::endJob() 
+void
+RecHitAnalyzer::endJob()
 {
   std::cout << " selected: " << nPassed << "/" << nTotal << std::endl;
 }
@@ -271,7 +271,7 @@ RecHitAnalyzer::getPFCand(edm::Handle<PFCollection> pfCands, float eta, float ph
 
   minDr = 10;
   const reco::PFCandidate* minDRCand = nullptr;
-  
+
   for ( PFCollection::const_iterator iPFC = pfCands->begin();
         iPFC != pfCands->end(); ++iPFC ) {
 
@@ -282,14 +282,14 @@ RecHitAnalyzer::getPFCand(edm::Handle<PFCollection> pfCands, float eta, float ph
     if (debug) std::cout << "\tthisdR: " << thisdR << " " << thisTrk->pt() << " " << iPFC->particleId() << std::endl;
 
     const reco::PFCandidate& thisPFCand = (*iPFC);
-      
+
     if ( (thisdR < 0.01) && (thisdR <minDr) ) {
-      minDr    = thisdR; 
+      minDr    = thisdR;
       minDRCand = &thisPFCand;
     }
   }
 
-  return minDRCand;  
+  return minDRCand;
 }
 
 const reco::Track*
@@ -301,20 +301,20 @@ RecHitAnalyzer::getTrackCand(edm::Handle<reco::TrackCollection> trackCands, floa
 
   for ( reco::TrackCollection::const_iterator iTk = trackCands->begin();
         iTk != trackCands->end(); ++iTk ) {
-    if ( !(iTk->quality(tkQt_)) ) continue;  
+    if ( !(iTk->quality(tkQt_)) ) continue;
 
     float thisdR = reco::deltaR( eta, phi, iTk->eta(),iTk->phi() );
     if (debug) std::cout << "\tthisdR: " << thisdR << " " << iTk->pt() << std::endl;
 
     const reco::Track& thisTrackCand = (*iTk);
-      
+
     if ( (thisdR < 0.01) && (thisdR <minDr) ) {
-      minDr    = thisdR; 
+      minDr    = thisdR;
       minDRCand = &thisTrackCand;
     }
   }
 
-  return minDRCand;  
+  return minDRCand;
 }
 
 
@@ -331,7 +331,7 @@ int RecHitAnalyzer::getTruthLabel(const reco::PFJetRef& recJet, edm::Handle<reco
 
     // Do not want to match to the final particles in the shower
     if ( iGen->status() > 99 ) continue;
-    
+
     // Only want to match to partons/leptons/bosons
     if ( iGen->pdgId() > 25 ) continue;
 
@@ -339,12 +339,12 @@ int RecHitAnalyzer::getTruthLabel(const reco::PFJetRef& recJet, edm::Handle<reco
 
     if ( debug ) std::cout << " \t >> dR " << dR << " id:" << iGen->pdgId() << " status:" << iGen->status() << " nDaught:" << iGen->numberOfDaughters() << " pt:"<< iGen->pt() << " eta:" <<iGen->eta() << " phi:" <<iGen->phi() << " nMoms:" <<iGen->numberOfMothers()<< std::endl;
 
-    if ( dR > dRMatch ) continue; 
+    if ( dR > dRMatch ) continue;
     if ( debug ) std::cout << " Matched pdgID " << iGen->pdgId() << std::endl;
 
     return iGen->pdgId();
 
-  } // gen particles 
+  } // gen particles
 
   return -99;
 }
@@ -364,12 +364,12 @@ float RecHitAnalyzer::getBTaggingValue(const reco::PFJetRef& recJet, edm::Handle
 
       if(debug) std::cout << "btag discriminator value = " << (*btagCollection)[jetRef] << std::endl;
       return (*btagCollection)[jetRef];
-  
+
     }
 
   if(debug){
     std::cout << "ERROR  No btag match: " << std::endl;
-    
+
     // loop over jets
     for( edm::View<reco::Jet>::const_iterator jetToMatch = recoJetCollection->begin(); jetToMatch != recoJetCollection->end(); ++jetToMatch )
       {
@@ -381,7 +381,7 @@ float RecHitAnalyzer::getBTaggingValue(const reco::PFJetRef& recJet, edm::Handle
 	float dR = reco::deltaR( recJet->eta(),recJet->phi(), thisJet.eta(),thisJet.phi() );
 	std::cout << "dR " << dR << std::endl;
       }
-  }    
+  }
 
   return -99;
 }

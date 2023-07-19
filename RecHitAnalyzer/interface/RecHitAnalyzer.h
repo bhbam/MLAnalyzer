@@ -133,7 +133,7 @@
 #include "TauAnalysis/ClassicSVfit/interface/svFitHistogramAdapter.h"
 #include "TauAnalysis/ClassicSVfit/interface/FastMTT.h"
 
-#include "SimTracker/TrackerHitAssociation/interface/TrackerHitAssociator.h" 
+#include "SimTracker/TrackerHitAssociation/interface/TrackerHitAssociator.h"
 
 #include "TrackingTools/Records/interface/TrackingComponentsRecord.h"
 #include "TrackingTools/Records/interface/TransientTrackRecord.h"
@@ -143,9 +143,10 @@
 #include "MagneticField/Engine/interface/MagneticField.h"
 #include "MagneticField/Records/interface/IdealMagneticFieldRecord.h"
 #include "Calibration/IsolatedParticles/interface/CaloPropagateTrack.h"
-
 #include "DataFormats/VertexReco/interface/Vertex.h"
 #include "DataFormats/VertexReco/interface/VertexFwd.h"
+
+#include "DataFormats/CTPPSReco/interface/CTPPSPixelRecHit.h"
 
 using namespace classic_svFit;
 
@@ -214,14 +215,14 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     std::string jetSFType_;      //to set
     std::string jetResPtType_;   //to set
     std::string jetResPhiType_;  //to set
- 
+
     std::vector<edm::EDGetTokenT<edm::View<reco::Candidate> > > lepTokens_;
- 
+
     typedef std::vector<reco::PFCandidate>  PFCollection;
     edm::EDGetTokenT<PFCollection> pfCollectionT_;
 
     edm::EDGetTokenT<edm::View<reco::Candidate> > pfCandidatesToken_;
-    
+
     metsig::METSignificance* metSigAlgo_;
 
     edm::EDGetTokenT<SiPixelRecHitCollection> siPixelRecHitCollectionT_;
@@ -233,8 +234,8 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     //edm::InputTag trackTags_; //used to select what tracks to read from configuration file
 
     // Diagnostic histograms
-    //TH2D * hEB_adc[EcalDataFrame::MAXSAMPLES]; 
-    //TH1D * hHBHE_depth; 
+    //TH2D * hEB_adc[EcalDataFrame::MAXSAMPLES];
+    //TH1D * hHBHE_depth;
     TH1F *h_sel;
 
     // Main TTree
@@ -244,7 +245,7 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     //std::vector<float> vEB_adc_[EcalDataFrame::MAXSAMPLES];
     //std::vector<float> vFC_inputs_;
     //math::PtEtaPhiELorentzVectorD vPho_[2];
-  
+
     // Selection and filling functions
     void branchesEvtSel         ( TTree*, edm::Service<TFileService>& );
     void branchesEvtSel_jet     ( TTree*, edm::Service<TFileService>& );
@@ -299,8 +300,8 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     // Jet level functions
     std::string mode_;  // EventLevel / JetLevel
     std::string task_;
-    bool isSignal_;  
-    bool isW_;  
+    bool isSignal_;
+    bool isW_;
     bool doJets_;
     int  nJets_;
     double minJetPt_;
@@ -341,15 +342,15 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     void fillByBinNumber(TH2F * histo, const std::vector<int>& phi_eta, const float& value);
     void fillTRKlayerHelper (int layer_, unsigned int proj, TH2F *hSUBDET_ECAL[][Nadjproj], TH2F *hEvt_Adj_SUBDET[][Nadjproj], const CaloGeometry* caloGeom, const float& eta, const float& phi);
     unsigned int getLayer(const DetId& detid);
-    
+
     unsigned int granularityMultiPhi[Nadjproj];
     unsigned int granularityMultiEta[Nadjproj];
-    
+
     int totalEtaBins[Nadjproj];// = totalMultiEta*(eta_nbins_HBHE);
     int totalPhiBins[Nadjproj];// = granularityMultiPhi * granularityMultiECAL*HBHE_IPHI_NUM;
     std::vector<double> adjEtaBins[Nadjproj];
     //std::vector<double> adjPhiBins[Nadjproj];
-    
+
 }; // class RecHitAnalyzer
 
 //

@@ -1,6 +1,6 @@
 
 
-import FWCore.ParameterSet.Config as cms 
+import FWCore.ParameterSet.Config as cms
 
 from RecoMET.METProducers.METSignificanceParams_cfi import METSignificanceParams
 
@@ -12,8 +12,8 @@ fevt = cms.EDAnalyzer('RecHitAnalyzer'
     , reducedEERecHitCollection      = cms.InputTag('reducedEcalRecHitsEE')
     #, EBDigiCollection               = cms.InputTag('simEcalDigis:ebDigis')
     #, selectedEBDigiCollection       = cms.InputTag('selectDigi:selectedEcalEBDigiCollection')
-    , reducedHBHERecHitCollection    = cms.InputTag('hbhereco')
-    #, reducedHBHERecHitCollection    = cms.InputTag('reducedHcalRecHits:hbhereco')
+    # , reducedHBHERecHitCollection    = cms.InputTag('hbhereco') # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>Not present in Data
+    , reducedHBHERecHitCollection    = cms.InputTag('reducedHcalRecHits:hbhereco')
     , genParticleCollection          = cms.InputTag('genParticles')
     , gedPhotonCollection            = cms.InputTag('gedPhotons')
     , ak4PFJetCollection             = cms.InputTag('ak4PFJets')
@@ -22,10 +22,11 @@ fevt = cms.EDAnalyzer('RecHitAnalyzer'
     , trackCollection                = cms.InputTag("generalTracks")
     , transTrackBuilder              = cms.ESInputTag("TransientTrackBuilder")
     , vertexCollection               = cms.InputTag("offlinePrimaryVertices")
-    , siPixelRecHitCollection        = cms.InputTag("siPixelRecHits")
-    , siStripMatchedRecHitCollection = cms.InputTag("siStripMatchedRecHits", "matchedRecHit")
-    , siStripRphiRecHits             = cms.InputTag("siStripMatchedRecHits", "rphiRecHit")
-    , siStripStereoRecHits           = cms.InputTag("siStripMatchedRecHits", "stereoRecHit")
+    #, siPixelRecHitCollection        = cms.InputTag("siPixelRecHits") # >>>>>>>>>>>>>>>>>>>>>>>>>not present in data
+    # , siPixelRecHitCollection        = cms.InputTag("ctppsPixelRecHits") # >>>>>>>>>>>>>>>>>>>>>>>>>not present in data
+    #, siStripMatchedRecHitCollection = cms.InputTag("siStripMatchedRecHits", "matchedRecHit")
+    #, siStripRphiRecHits             = cms.InputTag("siStripMatchedRecHits", "rphiRecHit")
+    #, siStripStereoRecHits           = cms.InputTag("siStripMatchedRecHits", "stereoRecHit")
     , pfCollection                   = cms.InputTag("particleFlow")
     , srcPFCandidates                = cms.InputTag("particleFlow")
     , recoJetsForBTagging            = cms.InputTag("ak4PFJetsCHS")
@@ -55,10 +56,11 @@ fevt = cms.EDAnalyzer('RecHitAnalyzer'
     , srcLeptons                     = cms.VInputTag("gedGsfElectrons","muons","gedPhotons")
 
     # Jet level cfg
-    , isDebug                        = cms.bool(True)
-    #, isDebug                        = cms.bool(False)
-    , task                           = cms.string("tau_classification")
+    # , isDebug                        = cms.bool(True)
+    , isDebug                        = cms.bool(False)
+    # , task                           = cms.string("tau_classification")
     #, task                           = cms.string("jet_ele_classification")
+    , task                           = cms.string("dijet_ditau")
     , isSignal                       = cms.bool(False)
     , isW                            = cms.bool(True)
     #, isW                            = cms.bool(False)
@@ -69,7 +71,7 @@ fevt = cms.EDAnalyzer('RecHitAnalyzer'
 
     # MET parameter
     , parameters = METSignificanceParams
- 
+
     #granularity multiplier wrt ECAL maps for tracker and tracking RH images
     , granularityMultiPhi = cms.int32(5)
     , granularityMultiEta = cms.int32(5)

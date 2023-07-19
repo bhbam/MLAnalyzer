@@ -41,7 +41,7 @@ void RecHitAnalyzer::branchesTRKlayersAtECALstitched ( TTree* tree, edm::Service
 
   for ( unsigned int proj=0; proj < Nhitproj; proj++ ) {
 
-    //TOB 
+    //TOB
     for ( int iL(0); iL < nTOB; iL++ ) {
     // Branches for images
     layer = iL + 1;
@@ -62,7 +62,7 @@ void RecHitAnalyzer::branchesTRKlayersAtECALstitched ( TTree* tree, edm::Service
       	5*(HBHE_IETA_MAX_HE-1-HBHE_IETA_MAX_EB), eta_bins_EE[iz] );
       } // iz
     } // iL
-  
+
 
     //TEC
     for ( int iL(0); iL < nTEC; iL++ ) {
@@ -129,7 +129,7 @@ void RecHitAnalyzer::branchesTRKlayersAtECALstitched ( TTree* tree, edm::Service
           5*(HBHE_IETA_MAX_HE-1-HBHE_IETA_MAX_EB), eta_bins_EE[iz] );
         } // iz
     } // iL
-    
+
     //BPIX
     for ( int iL(0); iL < nBPIX; iL++ ) {
       // Branches for images
@@ -178,7 +178,7 @@ void RecHitAnalyzer::branchesTRKlayersAtECALstitched ( TTree* tree, edm::Service
 } // branchesEB()
 
 
-// Function to map EE(phi,eta) histograms to ECAL(iphi,ieta) vector _______________________________// 
+// Function to map EE(phi,eta) histograms to ECAL(iphi,ieta) vector _______________________________//
 
 void fillTRKLayerAtECAL_with_EEproj( TH2F *hEvt_EE_SUBDET, std::vector<float> & vSUBDET_ECAL_, TH2F *hSUBDET_ECAL, int ieta_global_offset, int ieta_signed_offset ){
   int ieta_global_, ieta_signed_;
@@ -228,7 +228,7 @@ void fillTRKLayerAtEB (DetId id, int layer_, unsigned int proj, TH2F *hSUBDET_EC
   int ieta_ = ebId.ieta() > 0 ? ebId.ieta()-1 : ebId.ieta();
   int ieta_signed = ieta_;
   int ieta_global = ieta_ + EB_IETA_MAX + ieta_global_offset;
-  int idx_ = ieta_global*EB_IPHI_MAX + iphi_; 
+  int idx_ = ieta_global*EB_IPHI_MAX + iphi_;
   vSUBDET_ECAL_[layer_-1][proj][idx_] += 1.0;
   hSUBDET_ECAL[layer_-1][proj]->Fill( iphi_, ieta_signed, 1. );
 }
@@ -256,8 +256,8 @@ unsigned int RecHitAnalyzer::getLayer(const DetId& detid, const TrackerTopology*
  // | mu  = 0    |    RPC = 3    | 4*(stat-1)+2*layer+region |                 | hit type = 0-3 |
  // | mu  = 0    |    GEM = 4    | 2*(stat-1)+2*(layer-1)    |                 | hit type = 0-3 |
  // | mu  = 0    |    ME0 = 5    | roll                      |                 | hit type = 0-3 |
- // | mtd = 2    |    BTL = 1    | moduleType = 1-3          |                 | hit type = 0-3 | 
- // | mtd = 2    |    ETL = 2    | ring = 1-12               |                 | hit type = 0-3 | 
+ // | mtd = 2    |    BTL = 1    | moduleType = 1-3          |                 | hit type = 0-3 |
+ // | mtd = 2    |    ETL = 2    | ring = 1-12               |                 | hit type = 0-3 |
  // +------------+---------------+---------------------------+-----------------+----------------+
   unsigned int subid=detid.subdetId();
   switch(subid){
@@ -311,7 +311,7 @@ unsigned int RecHitAnalyzer::getLayer(const DetId& detid, const TrackerTopology*
 
 // Fill TRK rechits at ECAL stitched ______________________________________________________________//
 void RecHitAnalyzer::fillTRKlayersAtECALstitched ( const edm::Event& iEvent, const edm::EventSetup& iSetup, unsigned int proj ) {
-  
+
   //conf_=iConfig;
 
   float eta, phi;
@@ -399,7 +399,7 @@ void RecHitAnalyzer::fillTRKlayersAtECALstitched ( const edm::Event& iEvent, con
     unsigned int layer = getLayer(detId, tTopo);
     //std::cout<<"Pixel Id = : "<<detId.rawId()<<" "<<detId.null()<<" , type = "<<detType<<" - subId ( 1->bpix | 2->fpix ) = "<< subid << " - Layer = " << layer << std::endl;
     const PixelGeomDetUnit* theGeomDet  = dynamic_cast<const PixelGeomDetUnit*> (theTracker.idToDetUnit(detId) );
-    unsigned int iPixelHit = 0; 
+    unsigned int iPixelHit = 0;
     SiPixelRecHitCollection::DetSet::const_iterator pixeliter=detset.begin();
     SiPixelRecHitCollection::DetSet::const_iterator rechitRangeIteratorEnd   = detset.end();
     for(;pixeliter!=rechitRangeIteratorEnd;++pixeliter)
@@ -548,7 +548,7 @@ void RecHitAnalyzer::fillTRKlayersAtECALstitched ( const edm::Event& iEvent, con
         }
       } else std::cout << "!!!!!!!!!!!!!! NO MATCHED STRIP HITS ARE VALID !!!!!!!!!!!!!!" << std::endl;
     } //std::cout << "End of StripReCHit " << iRecHit << std::endl;
-  } // end loop over detectors 
+  } // end loop over detectors
 
 
   // RPHI REC HIT COLLECTION
@@ -638,7 +638,7 @@ void RecHitAnalyzer::fillTRKlayersAtECALstitched ( const edm::Event& iEvent, con
         }
       } else std::cout << "!!!!!!!!!!!!!! NO RPHI STRIP HITS ARE VALID !!!!!!!!!!!!!!" << std::endl;
     } //std::cout << "End of StripReCHit " << iRecHit << std::endl;
-  } // end loop over detectors 
+  } // end loop over detectors
 
   // STEREO REC HIT COLLECTION
 
@@ -728,7 +728,7 @@ void RecHitAnalyzer::fillTRKlayersAtECALstitched ( const edm::Event& iEvent, con
         }
       } else std::cout << "!!!!!!!!!!!!!! NO STEREO STRIP HITS ARE VALID !!!!!!!!!!!!!!" << std::endl;
     } //std::cout << "End of StripReCHit " << iRecHit << std::endl;
-  } // end loop over detectors 
+  } // end loop over detectors
 
 
 
@@ -740,4 +740,3 @@ void RecHitAnalyzer::fillTRKlayersAtECALstitched ( const edm::Event& iEvent, con
   fillTRKLayerAtECAL_with_EEproj( hEvt_EE_TID, vTID_ECAL_, hTID_ECAL, nTID, proj);
 
 } // fillEB()
-

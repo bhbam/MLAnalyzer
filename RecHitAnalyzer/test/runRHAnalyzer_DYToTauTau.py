@@ -32,18 +32,20 @@ process.es_prefer_GlobalTag = cms.ESPrefer('PoolDBESSource','GlobalTag')
 process.TrackRefitter.TTRHBuilder = 'WithAngleAndTemplate'
 
 process.maxEvents = cms.untracked.PSet( 
-    input = cms.untracked.int32(options.maxEvents) 
+    input = cms.untracked.int32(100) 
     )
 
 process.source = cms.Source("PoolSource",
-    fileNames = cms.untracked.vstring(
-      options.inputFiles
+    fileNames = cms.untracked.vstring("file:/eos/uscms/store/group/lpcml/rchudasa/MCGeneration/WJetsToLNu_TuneCP5_13TeV_madgraphMLM-pythia8/WJetsToLNu_TuneCP5_13TeV_madgraphMLM-pythia8_DIGI-RECO/230218_132746/0000/digiToRecoStep_1.root"
+      #options.inputFiles
       )
     , skipEvents = cms.untracked.uint32(options.skipEvents)
     )
 print (" >> Loaded",len(options.inputFiles),"input files from list.")
 
+#process.load("MLAnalyzer.RecHitAnalyzer.rechitAnalyzer_cfi")
 process.load("MLAnalyzer.RecHitAnalyzer.RHAnalyzer_cfi")
+process.fevt.isSignal = True
 process.fevt.mode = cms.string(options.processMode)
 print (" >> Processing as:",(process.fevt.mode))
 

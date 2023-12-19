@@ -1,4 +1,4 @@
-iimport os
+import os
 
 cfg='RecHitAnalyzer/python/ConfFile_data_cfg.py'
 # cfg='RecHitAnalyzer/python/ConfFile_cfg.py'
@@ -12,7 +12,7 @@ cfg='RecHitAnalyzer/python/ConfFile_data_cfg.py'
 # inputFiles_='file/eos/user/b/bhbam/CMSSW_10_6_20/src/data_Run2018D_Tau_AOD_12Nov2019_UL2018_v1_00000_01173695_E460_C84F_9261_3A7EDF30E7AC.root'
 inputFiles_='file:data_Run2018B_Tau_AOD_15Feb2022_UL2018_v1_2820000_0C6EC09F_736E_B640_AD5A_E99536E72323.root'
 # maxEvents_=100
-maxEvents_=10
+maxEvents_=-1
 skipEvents_=0#
 #outputFile_='qcd.root'
 #outputFile_='ttbar.root'

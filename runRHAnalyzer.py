@@ -1,6 +1,6 @@
 import os
 
-cfg='RecHitAnalyzer/python/ConfFile_data_cfg.py'
+cfg='RecHitAnalyzer/python/ConfFile_cfg.py'
 # cfg='RecHitAnalyzer/python/ConfFile_cfg.py'
 #inputFiles_='file:/eos/cms/store/group/phys_heavyions/rchudasa/e2e/eventGenerationChecks/digiToRecoStep_753_QCD_Pt-15to7000.root' #QCD
 #inputFiles_='file:/eos/cms/store/group/phys_heavyions/rchudasa/e2e/eventGenerationChecks/digiToRecoStep_318_Wjets.root' #QCD

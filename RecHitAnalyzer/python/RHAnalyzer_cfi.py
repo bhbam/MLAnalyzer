@@ -5,6 +5,19 @@ import FWCore.ParameterSet.Config as cms
 from RecoMET.METProducers.METSignificanceParams_cfi import METSignificanceParams
 
 fevt = cms.EDAnalyzer('RecHitAnalyzer'
+    #, isDebug                        = cms.bool(True)
+    #, isDebug                        = cms.bool(False)
+    , task                           = cms.string("dijet_tau_massregression")
+    # , task                           = cms.string("dijet_ditau")
+    #, task                           = cms.string("tau_classification")
+    #, task                           = cms.string("jet_ele_classification")
+    #, task                           = cms.string("qcd")
+    #, task                           = cms.string("boostedTop")
+    , isMC                           = cms.bool(False)
+    , isSignal                       = cms.bool(False)
+    , isW                            = cms.bool(False)
+    , isBoostedTop                   = cms.bool(False)
+
     #, tracks = cms.untracked.InputTag('ctfWithMaterialTracks')
     #, EBRecHitCollection             = cms.InputTag('ecalRecHit:EcalRecHitsEB')
     , reducedEBRecHitCollection      = cms.InputTag('reducedEcalRecHitsEB')
@@ -22,6 +35,7 @@ fevt = cms.EDAnalyzer('RecHitAnalyzer'
     , trackCollection                = cms.InputTag("generalTracks")
     , transTrackBuilder              = cms.ESInputTag("TransientTrackBuilder")
     , vertexCollection               = cms.InputTag("offlinePrimaryVertices")
+    , secVertexCollection            = cms.InputTag("inclusiveCandidateSecondaryVertices")
     , siPixelRecHitCollection        = cms.InputTag("siPixelRecHits")
     , siStripMatchedRecHitCollection = cms.InputTag("siStripMatchedRecHits", "matchedRecHit")
     , siStripRphiRecHits             = cms.InputTag("siStripMatchedRecHits", "rphiRecHit")
@@ -57,22 +71,8 @@ fevt = cms.EDAnalyzer('RecHitAnalyzer'
     , srcLeptons                     = cms.VInputTag("gedGsfElectrons","muons","gedPhotons")
 
     # Jet level cfg
-    #, isDebug                        = cms.bool(True)
-    #, isDebug                        = cms.bool(False)
-    #, task                           = cms.string("dijet_ditau")
-    , task                           = cms.string("dijet_tau_massregression")
-    #, task                           = cms.string("tau_classification")
-    #, task                           = cms.string("jet_ele_classification")
-    #, task                           = cms.string("qcd")
-    #, task                           = cms.string("ttbar")
-    # , isSignal                       = cms.bool(False)
-    , isSignal                       = cms.bool(True)
-    , isW                            = cms.bool(True)
-    #, isW                            = cms.bool(False)
-    #, isttbar                        = cms.bool(True)
-    , isttbar                        = cms.bool(False)
     , nJets     = cms.int32(-1)
-    , minJetPt  = cms.double(20.)
+    , minJetPt  = cms.double(15.)
     , maxJetEta = cms.double(2.4)
     , z0PVCut   = cms.double(0.1)
 

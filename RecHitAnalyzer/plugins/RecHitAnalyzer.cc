@@ -16,6 +16,14 @@
 //
 RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
 {
+  //debug      = iConfig.getParameter<bool>("isDebug");  
+  mode_      = iConfig.getParameter<std::string>("mode");
+  task_      = iConfig.getParameter<std::string>("task");
+  isMC_      = iConfig.getParameter<bool>("isMC");
+  isSignal_  = iConfig.getParameter<bool>("isSignal");
+  isW_       = iConfig.getParameter<bool>("isW");
+  isBoostedTop_   = iConfig.getParameter<bool>("isBoostedTop");
+
   //EBRecHitCollectionT_    = consumes<EcalRecHitCollection>(iConfig.getParameter<edm::InputTag>("EBRecHitCollection"));
   EBRecHitCollectionT_    = consumes<EcalRecHitCollection>(iConfig.getParameter<edm::InputTag>("reducedEBRecHitCollection"));
   //EBDigiCollectionT_      = consumes<EBDigiCollection>(iConfig.getParameter<edm::InputTag>("selectedEBDigiCollection"));
@@ -25,7 +33,10 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
   HBHERecHitCollectionT_  = consumes<HBHERecHitCollection>(iConfig.getParameter<edm::InputTag>("reducedHBHERecHitCollection"));
   TRKRecHitCollectionT_   = consumes<TrackingRecHitCollection>(iConfig.getParameter<edm::InputTag>("trackRecHitCollection"));
 
-  genParticleCollectionT_ = consumes<reco::GenParticleCollection>(iConfig.getParameter<edm::InputTag>("genParticleCollection"));
+  if(isMC_){
+  	genParticleCollectionT_ = consumes<reco::GenParticleCollection>(iConfig.getParameter<edm::InputTag>("genParticleCollection"));
+  }  
+
   photonCollectionT_      = consumes<reco::PhotonCollection>(iConfig.getParameter<edm::InputTag>("gedPhotonCollection"));
   jetCollectionT_         = consumes<reco::PFJetCollection>(iConfig.getParameter<edm::InputTag>("ak4PFJetCollection"));
   pfjetsToken_            = consumes<edm::View<reco::Jet> >(iConfig.getParameter<edm::InputTag>("srcPfJets"));
@@ -37,6 +48,7 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
   pfCandidatesToken_      = consumes<edm::View<reco::Candidate> >(iConfig.getParameter<edm::InputTag>("srcPFCandidates"));
 
   vertexCollectionT_      = consumes<reco::VertexCollection>(iConfig.getParameter<edm::InputTag>("vertexCollection"));
+  secVertexCollectionT_   = consumes<reco::VertexCompositePtrCandidateCollection>(iConfig.getParameter<edm::InputTag>("secVertexCollection"));
 
   recoJetsT_              = consumes<edm::View<reco::Jet> >(iConfig.getParameter<edm::InputTag>("recoJetsForBTagging"));
   jetTagCollectionT_      = consumes<reco::JetTagCollection>(iConfig.getParameter<edm::InputTag>("jetTagCollection"));
@@ -78,12 +90,6 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
   metSigAlgo_               = new metsig::METSignificance(iConfig);
 
   //johnda add configuration
-  //debug      = iConfig.getParameter<bool>("isDebug");
-  mode_      = iConfig.getParameter<std::string>("mode");
-  task_      = iConfig.getParameter<std::string>("task");
-  isSignal_  = iConfig.getParameter<bool>("isSignal");
-  isW_       = iConfig.getParameter<bool>("isW");
-  isttbar_   = iConfig.getParameter<bool>("isttbar");
   minJetPt_  = iConfig.getParameter<double>("minJetPt");
   maxJetEta_ = iConfig.getParameter<double>("maxJetEta");
   z0PVCut_   = iConfig.getParameter<double>("z0PVCut");
@@ -386,6 +392,27 @@ float RecHitAnalyzer::getBTaggingValue(const reco::PFJetRef& recJet, edm::Handle
   }    
 
   return -99;
+}
+
+
+Measurement1D RecHitAnalyzer::vertexDxy(const reco::VertexCompositePtrCandidate &svcand, const reco::Vertex &pv)  {
+  VertexDistanceXY dist;
+  reco::Vertex::CovarianceMatrix csv; svcand.fillVertexCovariance(csv);
+  reco::Vertex svtx(svcand.vertex(), csv);
+  return dist.distance(svtx, pv);
+}
+
+Measurement1D RecHitAnalyzer::vertexD3d(const reco::VertexCompositePtrCandidate &svcand, const reco::Vertex &pv)  {
+  VertexDistance3D dist;
+  reco::Vertex::CovarianceMatrix csv; svcand.fillVertexCovariance(csv);
+  reco::Vertex svtx(svcand.vertex(), csv);
+  return dist.distance(svtx, pv);
+}
+
+float RecHitAnalyzer::vertexDdotP(const reco::VertexCompositePtrCandidate &sv, const reco::Vertex &pv)  {
+  reco::Candidate::Vector p = sv.momentum();
+  reco::Candidate::Vector d(sv.vx() - pv.x(), sv.vy() - pv.y(), sv.vz() - pv.z());
+  return p.Unit().Dot(d.Unit());
 }
 
 //define this as a plug-in

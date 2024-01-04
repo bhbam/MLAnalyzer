@@ -64,7 +64,13 @@
 #include "DQM/HcalCommon/interface/Constants.h"
 
 #include "FWCore/Framework/interface/Event.h"
+#include "FWCore/Framework/interface/EventSetup.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
+#include "FWCore/Framework/interface/ConsumesCollector.h"
+
+#include "FWCore/Utilities/interface/Exception.h"
+#include "DataFormats/PatCandidates/interface/Jet.h"
+#include "DataFormats/PatCandidates/interface/PackedCandidate.h"
 
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/Utilities/interface/InputTag.h"
@@ -146,6 +152,10 @@
 
 #include "DataFormats/VertexReco/interface/Vertex.h"
 #include "DataFormats/VertexReco/interface/VertexFwd.h"
+#include "DataFormats/Candidate/interface/VertexCompositePtrCandidate.h"
+#include "DataFormats/GeometryCommonDetAlgo/interface/Measurement1D.h"
+#include "RecoVertex/VertexTools/interface/VertexDistanceXY.h"
+#include "RecoVertex/VertexTools/interface/VertexDistance3D.h"
 
 using namespace classic_svFit;
 
@@ -178,6 +188,16 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     virtual void analyze(const edm::Event&, const edm::EventSetup&) override;
     virtual void endJob() override;
 
+    //switches 
+    std::string mode_;  // EventLevel / JetLevel
+    std::string task_;
+    bool isMC_;
+    bool isSignal_;
+    bool isW_;
+    bool isBoostedTop_;
+    bool doJets_;
+
+
     // ----------member data ---------------------------
     // Tokens
     edm::EDGetTokenT<EcalRecHitCollection> EBRecHitCollectionT_;
@@ -192,6 +212,7 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     edm::EDGetTokenT<reco::GenJetCollection> genJetCollectionT_;
     edm::EDGetTokenT<reco::TrackCollection> trackCollectionT_;
     edm::EDGetTokenT<reco::VertexCollection> vertexCollectionT_;
+    edm::EDGetTokenT<reco::VertexCompositePtrCandidateCollection> secVertexCollectionT_;
     edm::ESInputTag transientTrackBuilderT_;
     edm::EDGetTokenT<edm::View<reco::Jet> > recoJetsT_;
     edm::EDGetTokenT<reco::JetTagCollection> jetTagCollectionT_;
@@ -298,12 +319,6 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     unsigned int getLayer(const DetId& detid, const TrackerTopology* tTopo);
 
     // Jet level functions
-    std::string mode_;  // EventLevel / JetLevel
-    std::string task_;
-    bool isSignal_;  
-    bool isW_;  
-    bool isttbar_;  
-    bool doJets_;
     int  nJets_;
     double minJetPt_;
     double maxJetEta_;
@@ -345,6 +360,18 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     void fillEvtSel_jet_qcd( const edm::Event&, const edm::EventSetup& );
     void fillEvtSel_jet_photonSel( const edm::Event&, const edm::EventSetup& );
 
+    //functions for secondary vertices
+    inline float catchInfs(const float& in, float replace_value=0){
+      if(std::isinf(in) || std::isnan(in))
+	return replace_value;
+      else if(in < -1e32 || in > 1e32)
+	return replace_value;
+      return in;
+    }    
+    static Measurement1D vertexDxy(const reco::VertexCompositePtrCandidate &svcand, const reco::Vertex &pv);
+    static Measurement1D vertexD3d(const reco::VertexCompositePtrCandidate &svcand, const reco::Vertex &pv);
+    static float vertexDdotP(const reco::VertexCompositePtrCandidate &sv, const reco::Vertex &pv);
+    
     int nTotal, nPassed;
     //bool debug;
 

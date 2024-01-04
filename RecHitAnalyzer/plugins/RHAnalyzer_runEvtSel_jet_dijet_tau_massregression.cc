@@ -1,6 +1,15 @@
 #include "MLAnalyzer/RecHitAnalyzer/interface/RecHitAnalyzer.h"
 
 using std::vector;
+bool H_AA = true;//true;//false;
+double A_mass = 8;//3.7,4,5,6,8,10,12,14
+bool A_TauTau = true;//false;
+bool unbiasing = false; // Unbaising will done during converting root to parquet file
+int id_ ;
+double a_min_mass = A_mass-0.5;//1.2;//A_mass-0.5;//9;//14.8;//3.6;//14;
+double a_max_mass = A_mass+0.5;//3.6;//A_mass+0.5;//10;//17.2;//14.8;//17.2;
+int a_mass_bins = 10;//10;//5;//6;//28;//8;
+//-------------------------------------------------------------
 
 const unsigned nJets = 50; //TODO: use cfg level nJets_
 TH1D *h_tau_mr_jet_pT;
@@ -9,11 +18,14 @@ TH1D *h_tau_mr_jet_eta;
 TH1D *h_tau_mr_jet_m0;
 TH1D *h_tau_mr_jet_ma;
 TH1D *h_tau_mr_jet_pta;
+TH1D *h_tau_mr_jet_etaa;
+TH1D *h_tau_mr_jet_phia;
 TH2D *h_tau_mr_jet_a_m_pt;
 TH1D *h_tau_mr_jet_nJet;
 TH1D *h_tau_mr_jet_isDiTau;
 TH1D *h_tau_mr_jet_dR;
 TH1D *h_tau_mr_jet_TaudR;
+TH2D *h_tau_mr_jet_Taudeta_phi;
 TH1D *h_tau_mr_jet_Tau1dR;
 TH1D *h_tau_mr_jet_Tau2dR;
 TH1D *h_tau_mr_jet_Tau1pT;
@@ -28,7 +40,11 @@ vector<float> v_mr_jetIsDiTau;
 vector<float> v_mr_jetadR;
 vector<float> v_mr_ma;
 vector<float> v_mr_pta;
+vector<float> v_mr_etaa;
+vector<float> v_mr_phia;
 vector<float> v_mr_jetTaudR;
+vector<float> v_mr_jetTaudeta;
+vector<float> v_mr_jetTaudphi;
 vector<float> v_mr_jetTau1dR;
 vector<float> v_mr_jetTau2dR;
 vector<float> v_mr_jetTau1pT;
@@ -43,11 +59,15 @@ vector<float> v_mr_jetn2dR;
 vector<float> v_mr_tau_jet_m0_;
 vector<float> v_mr_tau_jet_ma_;
 vector<float> v_mr_tau_jet_pta_;
+vector<float> v_mr_tau_jet_etaa_;
+vector<float> v_mr_tau_jet_phia_;
 vector<float> v_mr_tau_jet_pt_;
 vector<float> v_mr_tau_jetPdgIds_;
 vector<float> v_mr_tau_jetIsDiTau_;
 vector<float> v_mr_tau_jetadR_;
 vector<float> v_mr_tau_jetTaudR_;
+vector<float> v_mr_tau_jetTaudeta_;
+vector<float> v_mr_tau_jetTaudphi_;
 vector<float> v_mr_tau_jetTau1dR_;
 vector<float> v_mr_tau_jetTau2dR_;
 vector<float> v_mr_tau_jetTau1pT_;
@@ -65,7 +85,8 @@ vector<float> v_mr_tau_subJetPy_[nJets];
 vector<float> v_mr_tau_subJetPz_[nJets];
 
 
-int sum(vector <int> dist) {
+// int sum(vector <int> dist) {
+int sum(vector <float> dist) {
     return std::accumulate(dist.begin(), dist.end(), 0);
 }
 
@@ -79,7 +100,9 @@ float max_element(vector <float> dist) {
     return max;
 }
 
-vector <float> get_inverse_pdf(vector <int> dist) {
+// vector <float> get_inverse_pdf(vector <int> dist) {
+//------------------------------------------------------------------------------------
+vector <float> get_inverse_pdf(vector <float> dist) {
     vector <float> invpdf(dist.size());
     float sum_hist = sum(dist);
     int s = dist.size();
@@ -92,6 +115,7 @@ vector <float> get_inverse_pdf(vector <int> dist) {
         invpdf[i] = invpdf[i] / max_invpdf;
     }
     return invpdf;
+
 }
 
 float lookup_mass_invpdf(float Mgen, vector <float> M_bins, vector <float> M_invpdf) {
@@ -103,7 +127,7 @@ float lookup_mass_invpdf(float Mgen, vector <float> M_bins, vector <float> M_inv
         if (ib + 1 >  s2 - 1) { break; }
         if (Mgen <= M_bins[ib]) { break; }
     }
-    //if (debug) std::cout << "   mass gen = " << Mgen << " | bin = " << ipt << " | mass bin = " << M_bins[ipt] << " | inv mass bin = " << M_invpdf[ipt] << std::endl;
+    if (debug) std::cout << "   mass gen = " << Mgen << " | bin = " << ipt << " | mass bin = " << M_bins[ipt] << " | inv mass bin = " << M_invpdf[ipt] << std::endl;
     return M_invpdf[ipt];
 }
 
@@ -116,12 +140,11 @@ float lookup_pt_invpdf(int pTgen, vector <int> pT_bins, vector <float> pT_invpdf
         if (ib + 1 >  s2 - 1) { break; }
         if (pTgen <= pT_bins[ib]) { break; }
     }
-    //if (debug) std::cout << "   pT gen = " << pTgen << " | bin = " << ipt << " | pt bin = " << pT_bins[ipt] << " | inv pt bin = " << pT_invpdf[ipt] << std::endl;
+    if (debug) std::cout << "   pT gen = " << pTgen << " | bin = " << ipt << " | pt bin = " << pT_bins[ipt] << " | inv pt bin = " << pT_invpdf[ipt] << std::endl;
     return pT_invpdf[ipt];
 }
 
 float lookup_invpdf(float Mgen, vector <float> M_bins, float pTgen, vector <int> pT_bins, vector <float> invpdf) {
-    bool debug = false;
     unsigned int ibin = 0;
     unsigned int ibinx = 0;
     unsigned int ibiny = 0;
@@ -130,20 +153,20 @@ float lookup_invpdf(float Mgen, vector <float> M_bins, float pTgen, vector <int>
     unsigned int inv = invpdf.size();
     bool found_mass = false;
     bool found_end  = false;
-    //if (debug) std::cout << "   Nbin = " << inv << " | Nbinx = " << m1 << " , Nbiny = " << pt1 << std::endl;
+    if (debug) std::cout << "   Nbin = " << inv << " | Nbinx = " << m1 << " , Nbiny = " << pt1 << std::endl;
     for (unsigned int ibx = 0; ibx < m1; ibx++) {
         if (found_mass || found_end) { break; }
         for (unsigned int iby = 0; iby < pt1; iby++) {
             ibin = (ibx*pt1) + iby;
             ibinx = ibx;
             ibiny = iby;
-            if ( ((ibx*pt1) + iby + 1) >  (inv - 1) ) { 
+            if ( ((ibx*pt1) + iby + 1) >  (inv - 1) ) {
                 found_end = true;
-                break; 
+                break;
             }
             if ( (Mgen  <= M_bins[ibx]) && (pTgen <= pT_bins[iby]) ) {
                 found_mass = true;
-                break; 
+                break;
             }
         }
     }
@@ -169,12 +192,20 @@ void RecHitAnalyzer::branchesEvtSel_jet_dijet_tau_massregression ( TTree* tree, 
   //h_tau_mr_jet_a_m_pt     = fs->make<TH2D>("h_a_m_pT"         , "m^{a} vs p_{T}^{a};m^{a} vs p_{T}^{a};Jets" ,  26, 3.6,  14, 18, 30., 120.);
   //h_tau_mr_jet_ma         = fs->make<TH1D>("h_jet_ma"         , "m^{a};m^{a};Jets"                           ,  26, 3.6,  14);
   //h_tau_mr_jet_pta        = fs->make<TH1D>("h_jet_pta"        , "p_{T}^{a};p_{T}^{a};Jets"                   ,  18, 30., 120.);
-  h_tau_mr_jet_a_m_pt     = fs->make<TH2D>("h_a_m_pT"         , "m^{a} vs p_{T}^{a};m^{a} vs p_{T}^{a};Jets" ,  26, 3.6,  14, 24, 30., 150.);
-  h_tau_mr_jet_ma         = fs->make<TH1D>("h_jet_ma"         , "m^{a};m^{a};Jets"                           ,  26, 3.6,  14);
-  h_tau_mr_jet_pta        = fs->make<TH1D>("h_jet_pta"        , "p_{T}^{a};p_{T}^{a};Jets"                   ,  24, 30., 150.);
+  // h_tau_mr_jet_a_m_pt     = fs->make<TH2D>("h_a_m_pT"         , "m^{a} vs p_{T}^{a};m^{a} vs p_{T}^{a};Jets" ,  26, 3.6,  14, 24, 30., 150.);
+  // h_tau_mr_jet_ma         = fs->make<TH1D>("h_jet_ma"         , "m^{a};m^{a};Jets"                           ,  26, 3.6,  14);
+  h_tau_mr_jet_ma         = fs->make<TH1D>("h_jet_ma"         , "m^{a};m^{a};Jets"                           ,  a_mass_bins, a_min_mass,  a_max_mass);
+  // h_tau_mr_jet_pta        = fs->make<TH1D>("h_jet_pta"        , "p_{T}^{a};p_{T}^{a};Jets"                   ,  24, 30., 150.);
+  // h_tau_mr_jet_a_m_pt     = fs->make<TH2D>("h_a_m_pT"         , "m^{a} vs p_{T}^{a};m^{a} vs p_{T}^{a};Jets" ,  26, 3.6,  14, 30, 30., 180.);
+  h_tau_mr_jet_a_m_pt     = fs->make<TH2D>("h_a_m_pT"         , "m^{a} vs p_{T}^{a};m^{a} vs p_{T}^{a};Jets" ,  a_mass_bins, a_min_mass,  a_max_mass, 30, 30., 180.);
+  // h_tau_mr_jet_ma         = fs->make<TH1D>("h_jet_ma"         , "m^{a};m^{a};Jets"                           ,  30, 3.6,  15);
+  h_tau_mr_jet_pta        = fs->make<TH1D>("h_jet_pta"        , "p_{T}^{a};p_{T}^{a};Jets"                   ,  30, 30., 180.);
+  h_tau_mr_jet_etaa        = fs->make<TH1D>("h_jet_etaa"        , "eta^{a};eta^{a};Jets"                   ,  30, -3., 3.);
+  h_tau_mr_jet_phia        = fs->make<TH1D>("h_jet_phia"        , "phi^{a};phi^{a};Jets"                   ,  30, -3.2, 3.2);
   h_tau_mr_jet_isDiTau    = fs->make<TH1D>("h_jet_isDiTau"    , "nIsDiTau;nIsDiTau;Jets"                     ,  10,  0.,  10.);
   h_tau_mr_jet_dR         = fs->make<TH1D>("h_jet_dR"         , "dR_{a,j};dR_{a,j};Jets"                     ,  50,  0.,  0.5);
   h_tau_mr_jet_TaudR      = fs->make<TH1D>("h_jet_TaudR"      , "dR_{#tau,#tau};dR_{#tau,#tau};Jets"         ,  50,  0.,   1.);
+  h_tau_mr_jet_Taudeta_phi      = fs->make<TH2D>("h_jet_Taudeta_phi"      ,  "dR_{phi};dR_{eta};Jets" ,  13, 0., 6.5, 13, 0., 6.5);
   h_tau_mr_jet_Tau1dR     = fs->make<TH1D>("h_jet_Tau1dR"     , "dR_{#tau_{1},j};dR_{#tau_{1},j};Jets"       ,  50,  0.,  0.5);
   h_tau_mr_jet_Tau2dR     = fs->make<TH1D>("h_jet_Tau2dR"     , "dR_{#tau_{2},j};dR_{#tau_{2},j};Jets"       ,  50,  0.,  0.5);
   h_tau_mr_jet_Tau1pT     = fs->make<TH1D>("h_jet_Tau1pT"     , "p_{T}^{#tau_{1}};p_{T}^{#tau_{1}};Jets"     ,  50,  0.,  100);
@@ -193,8 +224,12 @@ void RecHitAnalyzer::branchesEvtSel_jet_dijet_tau_massregression ( TTree* tree, 
   tree->Branch("jetIsDiTau", &v_mr_tau_jetIsDiTau_);
   tree->Branch("a_m",        &v_mr_tau_jet_ma_);
   tree->Branch("a_pt",       &v_mr_tau_jet_pta_);
+  tree->Branch("a_eta",       &v_mr_tau_jet_etaa_);
+  tree->Branch("a_phi",       &v_mr_tau_jet_phia_);
   tree->Branch("jetpT",      &v_mr_tau_jet_pt_);
   tree->Branch("TaudR",      &v_mr_tau_jetTaudR_);
+  tree->Branch("Taudeta",      &v_mr_tau_jetTaudeta_);
+  tree->Branch("Taudphi",      &v_mr_tau_jetTaudphi_);
   tree->Branch("Tau1dR",     &v_mr_tau_jetTau1dR_);
   tree->Branch("Tau2dR",     &v_mr_tau_jetTau2dR_);
   tree->Branch("Tau1pT",     &v_mr_tau_jetTau1pT_);
@@ -239,7 +274,11 @@ bool RecHitAnalyzer::runEvtSel_jet_dijet_tau_massregression( const edm::Event& i
   v_mr_jetadR.clear();
   v_mr_ma.clear();
   v_mr_pta.clear();
+  v_mr_etaa.clear();
+  v_mr_phia.clear();
   v_mr_jetTaudR.clear();
+  v_mr_jetTaudeta.clear();
+  v_mr_jetTaudphi.clear();
   v_mr_jetTau1dR.clear();
   v_mr_jetTau2dR.clear();
   v_mr_jetTau1pT.clear();
@@ -263,8 +302,12 @@ bool RecHitAnalyzer::runEvtSel_jet_dijet_tau_massregression( const edm::Event& i
   bool MatchedPseudoScalar = false;
   float a_mass = -99.;
   float a_pt   = -99.;
+  float a_eta   = -99.;
+  float a_phi   = -99.;
   float dRa    = -99.;
-  float tausdR =  99.;
+  float tausdR =  -99.;
+  float tausdeta =  -99.;
+  float tausdphi =  -99.;
   float tau1dR = -99.;
   float tau2dR = -99.;
   float tau1pT = -99.;
@@ -274,42 +317,90 @@ bool RecHitAnalyzer::runEvtSel_jet_dijet_tau_massregression( const edm::Event& i
   float n1dR   = -99.;
   float n2dR   = -99.;
 
-  bool unbiasing = false;
-  vector <int> pT_bins   = {35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 105, 110, 115, 120, 125, 130, 135, 140, 145, 150};
+
+  // bool unbiasing = false;
+  // vector <int> pT_bins   = {35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 105, 110, 115, 120, 125, 130, 135, 140, 145, 150};
   vector <float> m_bins = {4.0, 4.4, 4.800000000000001, 5.2, 5.6, 6.0, 6.4, 6.800000000000001, 7.2, 7.6, 8.0, 8.4, 8.8, 9.200000000000001, 9.6, 10.0, 10.4, 10.8, 11.200000000000001, 11.6, 12.0, 12.4, 12.8, 13.200000000000001, 13.6, 14.0};
-  vector <int> occ = {
-//  35,   40,   45,   50,   55,   60,   65,   70,   75,   80,   85,   90,   95,  100,  105,  110,  115,  120,  125,  130,  135,  140,  145,  150
-   100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100, // 3.6 -  4.0
-   100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100, //    ->  4.4
-   100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100, //    ->  4.8
-   100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100, //    ->  5.2
-   100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100, //    ->  5.6
-   100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100, //    ->  6.0
-   100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100, //    ->  6.4
-   100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100, //    ->  6.8
-   100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100, //    ->  7.2
-   100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100, //    ->  7.6
-   100,  114,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100, //    ->  8.0 #!!!!
-   100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100, //    ->  8.4
-   100,  100,  104,  100,  104,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100, //    ->  8.8
-   100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100, //    ->  9.2
-   100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100, //    ->  9.6
-   100,  100,  100,  152,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100, //    -> 10.0 #!!!!
-   100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100, //    -> 10.4
-   100,  100,  100,  100,  130,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100, //    -> 10.8 #!!!!
-   100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100, //    -> 11.2
-   100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100, //    -> 11.6
-   100,  100,  100,  100,  100,  398,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100, //    -> 12.0 #!!!!
-   100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100, //    -> 12.4
-   100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100, //    -> 12.8 #!!!!
-   100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100, //    -> 13.2
-   100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100, //    -> 13.6
-   100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100  //    -> 14.0
+  vector <int> pT_bins   = {35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 105, 110, 115, 120, 125, 130, 135, 140, 145, 150, 155, 160, 165, 170, 175, 180};
+
+vector <float> occ =
+{240, 180, 180, 150, 130, 150, 100, 100, 150, 130, 100, 130, 150, 130, 150, 100, 100, 150, 130, 100, 100, 130, 100, 130, 130, 130, 130, 130, 130, 100,
+240, 240, 150, 130, 150, 150, 130, 150, 100, 130, 130, 130, 150, 100, 130, 130, 100, 130, 100, 130, 100, 130, 130, 100, 130, 150, 100, 100, 130, 100,
+240, 180, 180, 150, 150, 100, 130, 100, 150, 100, 130, 100, 100, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 150, 150, 100, 130, 100, 130, 100,
+240, 180, 150, 150, 150, 150, 130, 130, 130, 100, 150, 130, 130, 150, 150, 150, 130, 150, 130, 150, 130, 100, 100, 100, 130, 100, 100, 100, 130, 130,
+240, 180, 150, 150, 150, 130, 150, 130, 150, 130, 100, 130, 130, 130, 100, 130, 130, 130, 150, 100, 100, 130, 130, 150, 100, 130, 130, 130, 100, 150,
+240, 210, 180, 150, 150, 100, 150, 130, 150, 130, 100, 150, 130, 150, 100, 100, 150, 130, 130, 100, 100, 100, 130, 100, 130, 100, 130, 150, 130, 100,
+210, 180, 180, 180, 150, 150, 130, 100, 150, 130, 130, 150, 100, 130, 130, 130, 150, 130, 100, 150, 150, 130, 130, 100, 100, 150, 150, 150, 130, 130,
+210, 180, 150, 150, 130, 130, 150, 150, 150, 150, 100, 130, 130, 150, 130, 130, 130, 130, 150, 130, 100, 100, 130, 100, 130, 100, 150, 130, 150, 130,
+210, 180, 150, 150, 150, 130, 150, 100, 130, 130, 150, 130, 100, 130, 130, 100, 130, 130, 150, 130, 130, 100, 130, 100, 150, 130, 130, 130, 130, 130,
+210, 150, 150, 150, 150, 150, 150, 150, 150, 130, 150, 100, 100, 130, 150, 130, 100, 130, 130, 150, 100, 130, 150, 100, 130, 130, 100, 150, 100, 130,
+180, 180, 180, 150, 150, 130, 150, 130, 130, 130, 130, 130, 130, 150, 100, 150, 130, 100, 130, 100, 130, 100, 100, 100, 130, 130, 130, 130, 150, 130,
+210, 150, 150, 150, 150, 130, 130, 150, 150, 150, 100, 100, 130, 100, 150, 100, 130, 100, 130, 150, 150, 130, 130, 100, 130, 130, 130, 130, 150, 130,
+180, 150, 150, 150, 130, 130, 130, 100, 150, 150, 130, 130, 150, 100, 100, 130, 130, 100, 130, 130, 130, 150, 130, 100, 130, 100, 130, 130, 100, 100,
+180, 150, 100, 130, 150, 150, 150, 130, 100, 130, 150, 100, 130, 150, 100, 130, 130, 130, 100, 130, 130, 100, 130, 130, 130, 130, 150, 150, 150, 100,
+180, 150, 100, 100, 130, 100, 100, 150, 100, 130, 130, 100, 130, 130, 150, 100, 130, 150, 130, 150, 130, 130, 130, 100, 100, 130, 130, 130, 100, 100,
+210, 180, 100, 100, 130, 130, 100, 100, 150, 130, 150, 100, 100, 100, 130, 130, 130, 130, 100, 100, 130, 130, 130, 150, 100, 130, 130, 130, 100, 100,
+210, 150, 130, 100, 100, 130, 130, 130, 150, 130, 130, 130, 150, 100, 150, 130, 130, 130, 130, 130, 100, 100, 130, 130, 130, 130, 100, 100, 100, 130,
+150, 150, 100, 100, 100, 100, 130, 150, 130, 100, 100, 150, 150, 100, 100, 100, 100, 150, 130, 150, 150, 130, 130, 100, 130, 100, 130, 150, 100, 130,
+210, 150, 150, 130, 100, 100, 150, 150, 150, 100, 130, 130, 150, 100, 130, 100, 150, 100, 100, 100, 100, 150, 150, 100, 100, 130, 100, 100, 130, 100,
+240, 150, 130, 150, 100, 100, 100, 100, 100, 130, 100, 100, 100, 100, 100, 150, 150, 150, 100, 130, 100, 100, 150, 130, 130, 130, 100, 100, 150, 130,
+210, 180, 180, 100, 100, 100, 100, 130, 100, 130, 130, 130, 130, 130, 100, 100, 130, 130, 130, 100, 150, 100, 100, 100, 130, 130, 130, 130, 100, 130,
+240, 210, 150, 180, 130, 100, 130, 130, 100, 100, 130, 150, 150, 130, 130, 100, 100, 100, 130, 130, 100, 130, 130, 100, 130, 130, 150, 100, 130, 130,
+240, 150, 150, 130, 130, 100, 100, 100, 150, 150, 100, 150, 130, 150, 100, 130, 130, 130, 130, 130, 150, 130, 130, 100, 130, 130, 100, 150, 100, 130,
+210, 240, 150, 180, 130, 100, 100, 100, 130, 150, 130, 150, 130, 100, 150, 100, 100, 130, 150, 150, 130, 130, 100, 130, 130, 130, 130, 130, 100, 130,
+280, 150, 130, 180, 150, 130, 100, 100, 130, 130, 150, 150, 130, 100, 150, 100, 130, 130, 130, 130, 130, 100, 130, 100, 130, 100, 130, 100, 100, 130,
+210, 180, 180, 150, 100, 180, 100, 100, 100, 130, 150, 150, 150, 100, 180, 150, 130, 130, 150, 130, 100, 100, 100, 130, 130, 100, 150, 130, 130, 130
 };
+
+
+
+
   //vector <float> m_invpdf  = get_inverse_pdf(m_occ);
   //vector <float> pT_invpdf = get_inverse_pdf(pT_occ);
   vector <float> invpdf    = get_inverse_pdf(occ);
+  //----------------------------------
+  // vector <float> invpdf    = get_inverse_pdf();
 
+//------------------------------------------------------------checking generated particle---------------------
+if(A_TauTau){
+// for A->TauTau
+id_ = 25;
+  unsigned int NAs = 0;
+  unsigned int NTau_fromA = 0;
+  for (reco::GenParticleCollection::const_iterator iGen = genParticles->begin(); iGen != genParticles->end(); ++iGen) {
+    if ( abs(iGen->pdgId()) != 15 || abs(iGen->mother()->pdgId()) != 25) continue;
+    if (H_AA){
+      if (abs(iGen->mother()->mother()->pdgId()) != 35) continue;
+    }
+    NTau_fromA++;
+  }
+  std::cout << "  >>>>>> Number Tau from  A <<<<<"<<"    "  <<  NTau_fromA << std::endl;
+  for (reco::GenParticleCollection::const_iterator iGen = genParticles->begin(); iGen != genParticles->end(); ++iGen) {
+    if ( abs(iGen->pdgId()) != 25 || abs(iGen->daughter(0)->pdgId()) != 15 || abs(iGen->daughter(1)->pdgId()) != 15) continue;
+    if (H_AA){
+      if (abs(iGen->mother()->pdgId()) != 35) continue;
+    }
+  NAs++;
+  std::cout << "  >>>>>> Number of A giving Tau <<<<<"<<"    "  <<  NAs << std::endl;
+  }
+}
+if(!A_TauTau){
+  //U->aToTauTa
+  id_ = 553;
+  unsigned int NUs = 0;
+  unsigned int NTau_fromU = 0;
+  for (reco::GenParticleCollection::const_iterator iGen = genParticles->begin(); iGen != genParticles->end(); ++iGen) {
+    if ( abs(iGen->pdgId()) != 15 || abs(iGen->mother()->pdgId()) != 553) continue;
+    NTau_fromU++;
+  }
+  std::cout << "  >>>>>> Number Tau from  U <<<<<"<<"    "  <<  NTau_fromU << std::endl;
+  for (reco::GenParticleCollection::const_iterator iGen = genParticles->begin(); iGen != genParticles->end(); ++iGen) {
+    if ( abs(iGen->pdgId()) != 553 || abs(iGen->daughter(0)->pdgId()) != 15 || abs(iGen->daughter(1)->pdgId()) != 15) continue;
+    NUs++;
+  }
+  std::cout << "  >>>>>> Number of U giving Tau <<<<<"<<"    "  <<  NUs << std::endl;
+}
+//--------------------------------------------------------------------------------------------------------------
   if ( debug ) std::cout << " >>>>>>>>>>>>>>>>>>>> evt:" << std::endl;
   if ( debug ) std::cout << " JETS IN THE EVENT = " << jets->size() << " | Selection requires minpT = " << minJetPt_ << " and maxEta = "<< maxJetEta_ << std::endl;
   // Loop over jets
@@ -320,21 +411,30 @@ bool RecHitAnalyzer::runEvtSel_jet_dijet_tau_massregression( const edm::Event& i
     if ( std::abs(iJet->eta()) > maxJetEta_ ) continue;
     unsigned int nMatchedGenParticles = 0;
     bool passedGenSel = false;
-    unsigned int iGenParticle = 0; 
+    unsigned int iGenParticle = 0;
     unsigned int NTau1Daughters = 0;
     unsigned int NTau2Daughters = 0;
     for (reco::GenParticleCollection::const_iterator iGen = genParticles->begin(); iGen != genParticles->end(); ++iGen) {
       if ( abs(iGen->pdgId()) != 15 ) continue;
+      if (H_AA){
+        if(iGen->mother()->pdgId() != 25 || iGen->mother()->mother()->pdgId() != 35 || iGen->mother()->mass() < (A_mass - 0.5) || iGen->mother()->mass() > (A_mass + 0.5) || iGen->mother()->mother()->mass() < 120 || iGen->mother()->mother()->mass() >130 ) continue;
+      }
+      if( iGen->mother()->mass() > a_max_mass || iGen->mother()->mass() < a_min_mass || iGen->mother()->pt() > 180 || iGen->mother()->pt() < 30 ) continue;//merged
       if ( iGen->status() != 2 ) continue;
       if (iGen->numberOfMothers() < 1) continue;
       ++iGenParticle;
       float dR = reco::deltaR( iJet->eta(),iJet->phi(), iGen->eta(),iGen->phi() );
       if ( dR > 0.4 ) continue;
+      std::cout << "  >>>>>> dR <<<<<"<<"    "  <<  dR << std::endl;
 
       if ( iGen->numberOfMothers() != 1 ) continue;
       aPdgId = std::abs(iGen->mother()->pdgId());
-      if ( abs(iGen->mother()->pdgId()) == 25 && iGen->mother()->mass() < 15 && iGen->mother()->mass() > 3.5) {
+      // if ( abs(iGen->mother()->pdgId()) == id_ && iGen->mother()->mass() < 130 && iGen->mother()->mass() > 120) { //higgs to tautau
+      // if ( abs(iGen->mother()->pdgId()) == id_ && iGen->mother()->mass() <= 14 && iGen->mother()->mass() > 3.5 && iGen->mother()->pt() <= 180 && iGen->mother()->pt() > 30) { // for Upsilon to tautau
+      if ( abs(iGen->mother()->pdgId()) == id_ && iGen->mother()->mass() <= a_max_mass && iGen->mother()->mass() > a_min_mass && iGen->mother()->pt() <= 180 && iGen->mother()->pt() > 30) { // for Upsilon to tautau
         MatchedPseudoScalar = true;
+
+        // std::cout << "  >>>>>> Matched Jet [" << iJ << "] -> Pt: " << iJet->pt() << ", Eta: " << iJet->eta() << ", Phi: " << iJet->phi() << std::endl;
       }
       else continue;
 
@@ -342,11 +442,25 @@ bool RecHitAnalyzer::runEvtSel_jet_dijet_tau_massregression( const edm::Event& i
 
         a_mass = iGen->mother()->mass();
         a_pt   = iGen->mother()->pt();
+        a_eta   = iGen->mother()->eta();
+        a_phi   = iGen->mother()->phi();
         dRa = reco::deltaR( iJet->eta(),iJet->phi(), iGen->mother()->eta(),iGen->mother()->phi() );
-        if ( iGen->mother()->numberOfDaughters() == 2 ){ 
-          if (abs(iGen->mother()->daughter(0)->pdgId()) == 15 && abs(iGen->mother()->daughter(1)->pdgId()) == 15){ 
+        if ( iGen->mother()->numberOfDaughters() == 2 ){
+          if (abs(iGen->mother()->daughter(0)->pdgId()) == 15 && abs(iGen->mother()->daughter(1)->pdgId()) == 15){
             tausdR = reco::deltaR( iGen->mother()->daughter(0)->eta(),iGen->mother()->daughter(0)->phi(), iGen->mother()->daughter(1)->eta(),iGen->mother()->daughter(1)->phi() );
-            if ( tausdR > 0.4 ) continue;
+            tausdeta = abs(iGen->mother()->daughter(0)->eta() - iGen->mother()->daughter(1)->eta());
+            tausdphi = abs(iGen->mother()->daughter(0)->phi() - iGen->mother()->daughter(1)->phi());
+            tau1dR = reco::deltaR( iJet->eta(),iJet->phi(), iGen->mother()->daughter(0)->eta(),iGen->mother()->daughter(0)->phi() );
+            tau2dR = reco::deltaR( iJet->eta(),iJet->phi(), iGen->mother()->daughter(1)->eta(),iGen->mother()->daughter(1)->phi() );
+            if ( tausdR > 0.4 ) continue; //merged
+            // if ( tausdR < 0.4 ) continue; //unmerged
+            std::cout << "  >>>>>> tausdR <<<<<"<<"    "  <<  tausdR << std::endl;
+            std::cout << "  >>>>>> tau1dR <<<<<"<<"    "  <<  tau1dR << std::endl;
+            std::cout << "  >>>>>> tau2dR <<<<<"<<"    "  <<  tau2dR << std::endl;
+            if (tau1dR > 0.4 || tau2dR > 0.4 ) continue; //merged
+            // if (tau1dR > 0.4 && tau2dR > 0.4 ) continue; //unmerged
+
+
 
             if ( debug ) std::cout << "   TAUS MOTHER  -> status: " << iGen->mother()->status() << ", id: " << iGen->mother()->pdgId() << ", nDaught: " << iGen->mother()->numberOfDaughters() << " | pt: "<< iGen->mother()->pt() << " eta: " <<iGen->mother()->eta() << " phi: " <<iGen->mother()->phi() << " mass: " <<iGen->mother()->mass() << std::endl;
 
@@ -361,13 +475,14 @@ bool RecHitAnalyzer::runEvtSel_jet_dijet_tau_massregression( const edm::Event& i
               if (rand_sampler > wgt) continue;
             }
 
-            if ( iGen->mother()->daughter(0)->pt() > iGen->mother()->daughter(1)->pt() ) {
+            if ( iGen->mother()->daughter(0)->pt() > iGen->mother()->daughter(1)->pt() ) { //tau1pt>tau2pt
               tau1pT = iGen->mother()->daughter(0)->pt();
               tau2pT = iGen->mother()->daughter(1)->pt();
               tau1dR = reco::deltaR( iJet->eta(),iJet->phi(), iGen->mother()->daughter(0)->eta(),iGen->mother()->daughter(0)->phi() );
               tau2dR = reco::deltaR( iJet->eta(),iJet->phi(), iGen->mother()->daughter(1)->eta(),iGen->mother()->daughter(1)->phi() );
-              
-              if ( debug ) std::cout << "   >>>>>> Taus dR = " << tausdR << " , tau1 dR = " << tau1dR << " , tau2 dR = " << tau2dR << std::endl;
+
+              // if ( debug ) std::cout << "   >>>>>> Taus dR = " << tausdR << " , tau1 dR = " << tau1dR << " , tau2 dR = " << tau2dR << std::endl;
+              std::cout << "   >>>>>> Taus dR = " << tausdR << " , tau1 dR = " << tau1dR << " , tau2 dR = " << tau2dR << std::endl;
               NTau1Daughters = iGen->mother()->daughter(0)->numberOfDaughters();
               NTau2Daughters = iGen->mother()->daughter(1)->numberOfDaughters();
               if ( debug ) std::cout << "    >>>>>> # Tau 1 daughters = " << NTau1Daughters << ",  # Tau 2 daughters = "<< NTau2Daughters << std::endl;
@@ -379,13 +494,15 @@ bool RecHitAnalyzer::runEvtSel_jet_dijet_tau_massregression( const edm::Event& i
                 if ( debug ) std::cout << "   >>>>>> Tau 2 Decay = " << iGen->mother()->daughter(1)->daughter(iDaughter)->pdgId() << std::endl;
                 if ( abs(iGen->mother()->daughter(1)->daughter(iDaughter)->pdgId()) == 16 ) n2dR = reco::deltaR( iJet->eta(),iJet->phi(), iGen->mother()->daughter(1)->daughter(iDaughter)->eta(), iGen->mother()->daughter(1)->daughter(iDaughter)->phi() );
               }
-            } else {
+            }// tau1pt>tau2pt
+            else {
               tau1pT = iGen->mother()->daughter(1)->pt();
               tau2pT = iGen->mother()->daughter(0)->pt();
               tau1dR = reco::deltaR( iJet->eta(),iJet->phi(), iGen->mother()->daughter(1)->eta(),iGen->mother()->daughter(1)->phi() );
               tau2dR = reco::deltaR( iJet->eta(),iJet->phi(), iGen->mother()->daughter(0)->eta(),iGen->mother()->daughter(0)->phi() );
 
-              if ( debug ) std::cout << "   >>>>>> Taus dR = " << tausdR << " , tau1 dR = " << tau1dR << " , tau2 dR = " << tau2dR << std::endl;
+              // if ( debug ) std::cout << "   >>>>>> Taus dR = " << tausdR << " , tau1 dR = " << tau1dR << " , tau2 dR = " << tau2dR << std::endl;
+              std::cout << "   >>>>>> Taus dR = " << tausdR << " , tau1 dR = " << tau1dR << " , tau2 dR = " << tau2dR << std::endl;
               NTau1Daughters = iGen->mother()->daughter(1)->numberOfDaughters();
               NTau2Daughters = iGen->mother()->daughter(0)->numberOfDaughters();
               if ( debug ) std::cout << "    >>>>>> # Tau 1 daughters = " << NTau1Daughters << ",  # Tau 2 daughters = "<< NTau2Daughters << std::endl;
@@ -401,8 +518,9 @@ bool RecHitAnalyzer::runEvtSel_jet_dijet_tau_massregression( const edm::Event& i
           }
         }
         //}
-        if (debug ) std::cout << "   >>>>>> n1 dR = " << n1dR << " , n2 dR = " << n2dR << std::endl;
-      }
+        // if (debug ) std::cout << "   >>>>>> n1 dR = " << n1dR << " , n2 dR = " << n2dR << std::endl;
+      std::cout << "   >>>>>> n1 dR = " << n1dR << " , n2 dR = " << n2dR << std::endl;
+    } // nMatchedGenParticles loop end
 
       if ( debug ) std::cout << "   GEN particle " << iGenParticle << " -> status: " << iGen->status() << ", id: " << iGen->pdgId() << ", nDaught: " << iGen->numberOfDaughters() << " nMoms: " <<iGen->numberOfMothers() << " | pt: "<< iGen->pt() << " eta: " <<iGen->eta() << " phi: " <<iGen->phi() << " | dR = "<< dR << std::endl ;
 
@@ -410,8 +528,10 @@ bool RecHitAnalyzer::runEvtSel_jet_dijet_tau_massregression( const edm::Event& i
 
       ++nMatchedGenParticles;
     } // primary gen particles
-    if ( nMatchedGenParticles > 0 ) passedGenSel = true;
-    if (passedGenSel) { 
+
+    if ( nMatchedGenParticles > 1 ) passedGenSel = true; // At leat two gen Tau matched to jet
+    // if ( nMatchedGenParticles > 0 ) passedGenSel = true; // At lest one Gen Tau matched
+    if (passedGenSel) {
       ++nMatchedJets;
 
       //Lookin at RecoTaus
@@ -434,10 +554,10 @@ bool RecHitAnalyzer::runEvtSel_jet_dijet_tau_massregression( const edm::Event& i
           ++nMatchedRecoTaus;
         } else if ( debug && recotaudR < 0.4 && nMatchedRecoTaus > 1 ) {
           std::cout << "   !!!!!!!!!!  FOUND MORE THAN 2 TAUS INSIDE JET CONE OF 0.4 !!!!!!!!!!"<< std::endl;
-          if (recotaudR < recotau2dR && recotaudR < recotau1dR) { 
+          if (recotaudR < recotau2dR && recotaudR < recotau1dR) {
             if (recotau1dR < recotau2dR) recotau2dR = recotau1dR;
             recotau1dR = recotaudR;
-          } else if (recotaudR < recotau2dR && recotaudR > recotau1dR) recotau2dR = recotaudR; 
+          } else if (recotaudR < recotau2dR && recotaudR > recotau1dR) recotau2dR = recotaudR;
           ++nMatchedRecoTaus;
         } else if ( debug ) {
           std::cout << "   !!!!!!!!!!  NO MATCH FOR Reco Tau [" << iT << "]  with jet [" << iJ << "] : dR = " << recotaudR << std::endl;
@@ -448,8 +568,12 @@ bool RecHitAnalyzer::runEvtSel_jet_dijet_tau_massregression( const edm::Event& i
       v_mr_tau_jetPdgIds_.push_back( aPdgId );
       v_mr_jetadR.push_back( dRa );
       v_mr_jetTaudR.push_back( tausdR );
+      v_mr_jetTaudeta.push_back( tausdeta );
+      v_mr_jetTaudphi.push_back( tausdphi );
       v_mr_ma.push_back( a_mass );
       v_mr_pta.push_back( a_pt );
+      v_mr_etaa.push_back( a_eta );
+      v_mr_phia.push_back( a_phi );
       v_mr_jetTau1dR.push_back( tau1dR );
       v_mr_jetTau2dR.push_back( tau2dR );
       v_mr_jetTau1pT.push_back( tau1pT );
@@ -467,8 +591,24 @@ bool RecHitAnalyzer::runEvtSel_jet_dijet_tau_massregression( const edm::Event& i
   } // reco jets
   if ( debug ) std::cout << " Matched jets " << nMatchedJets << std::endl;
 
+
+
   // Check jet multiplicity
-  if ( nMatchedJets < 1 ) return false;
+  // if ( nMatchedJets < 1 ) return false; // modified so that at least 1 reco tau in jet
+  if ( nMatchedJets < 1 || nMatchedRecoTaus < 1) return false;
+
+  // vector<float> jet_eta;
+  // vector<float> jet_phi;
+  // jet_eta.clear();
+  // jet_phi.clear();
+  // for ( unsigned iJ(0); iJ != vJetIdxs.size(); ++iJ ) {
+  //
+  //   reco::PFJetRef iJet( jets, vJetIdxs[iJ] );
+  //   jet_eta.push_back(iJet->eta());
+  //   jet_phi.push_back(iJet->eta());}
+  // float jet_jet_dR= reco::deltaR( jet_eta[0],jet_phi[0], jet_eta[1],jet_phi[1] );
+  // std::cout << " ------------------------------------------------------------>> jet_jet_dR  :" << jet_jet_dR<<std::endl;
+  // if (jet_jet_dR < 0.4) return false;
 
   if ( debug ) std::cout << " >> has_jet_dijet_tau_massregression: passed" << std::endl;
   return true;
@@ -487,9 +627,13 @@ void RecHitAnalyzer::fillEvtSel_jet_dijet_tau_massregression ( const edm::Event&
   v_mr_tau_jet_m0_.clear();
   v_mr_tau_jet_ma_.clear();
   v_mr_tau_jet_pta_.clear();
+  v_mr_tau_jet_etaa_.clear();
+  v_mr_tau_jet_phia_.clear();
   v_mr_tau_jetIsDiTau_.clear();
   v_mr_tau_jetadR_.clear();
   v_mr_tau_jetTaudR_.clear();
+  v_mr_tau_jetTaudeta_.clear();
+  v_mr_tau_jetTaudphi_.clear();
   v_mr_tau_jetTau1dR_.clear();
   v_mr_tau_jetTau2dR_.clear();
   v_mr_tau_jetTau1pT_.clear();
@@ -500,12 +644,12 @@ void RecHitAnalyzer::fillEvtSel_jet_dijet_tau_massregression ( const edm::Event&
   v_mr_tau_jetrecoTau2dR_.clear();
   v_mr_tau_jetn1dR_.clear();
   v_mr_tau_jetn2dR_.clear();
- 
+
   for ( unsigned iJ(0); iJ != vJetIdxs.size(); ++iJ ) {
 
     reco::PFJetRef iJet( jets, vJetIdxs[iJ] );
 
-    // Fill histograms 
+    // Fill histograms
     h_tau_mr_jet_pT->Fill( std::abs(iJet->pt()) );
     h_tau_mr_jet_eta->Fill( iJet->eta() );
     h_tau_mr_jet_E->Fill( iJet->energy() );
@@ -514,8 +658,11 @@ void RecHitAnalyzer::fillEvtSel_jet_dijet_tau_massregression ( const edm::Event&
     h_tau_mr_jet_dR->Fill( v_mr_jetadR[iJ] );
     h_tau_mr_jet_ma->Fill( v_mr_ma[iJ] );
     h_tau_mr_jet_pta->Fill( v_mr_pta[iJ] );
+    h_tau_mr_jet_etaa->Fill( v_mr_etaa[iJ] );
+    h_tau_mr_jet_phia->Fill( v_mr_phia[iJ] );
     h_tau_mr_jet_a_m_pt->Fill( v_mr_ma[iJ], v_mr_pta[iJ] );
     h_tau_mr_jet_TaudR->Fill( v_mr_jetTaudR[iJ] );
+    h_tau_mr_jet_Taudeta_phi->Fill(v_mr_jetTaudphi[iJ], v_mr_jetTaudeta[iJ]);
     h_tau_mr_jet_Tau1dR->Fill( v_mr_jetTau1dR[iJ] );
     h_tau_mr_jet_Tau2dR->Fill( v_mr_jetTau2dR[iJ] );
     h_tau_mr_jet_Tau1pT->Fill( v_mr_jetTau1pT[iJ] );
@@ -527,14 +674,18 @@ void RecHitAnalyzer::fillEvtSel_jet_dijet_tau_massregression ( const edm::Event&
     h_tau_mr_jet_n1dR->Fill( v_mr_jetn1dR[iJ] );
     h_tau_mr_jet_n2dR->Fill( v_mr_jetn2dR[iJ] );
 
-    // Fill branches 
+    // Fill branches
     v_mr_tau_jet_pt_.push_back( iJet->pt() );
     v_mr_tau_jet_m0_.push_back( iJet->mass() );
     v_mr_tau_jet_ma_.push_back( v_mr_ma[iJ] );
     v_mr_tau_jet_pta_.push_back( v_mr_pta[iJ] );
+    v_mr_tau_jet_etaa_.push_back( v_mr_etaa[iJ] );
+    v_mr_tau_jet_phia_.push_back( v_mr_phia[iJ] );
     v_mr_tau_jetIsDiTau_.push_back( v_mr_jetIsDiTau[iJ] );
     v_mr_tau_jetadR_.push_back( v_mr_jetadR[iJ] );
     v_mr_tau_jetTaudR_.push_back( v_mr_jetTaudR[iJ] );
+    v_mr_tau_jetTaudeta_.push_back( v_mr_jetTaudeta[iJ] );
+    v_mr_tau_jetTaudphi_.push_back( v_mr_jetTaudphi[iJ] );
     v_mr_tau_jetTau1dR_.push_back( v_mr_jetTau1dR[iJ] );
     v_mr_tau_jetTau2dR_.push_back( v_mr_jetTau2dR[iJ] );
     v_mr_tau_jetTau1pT_.push_back( v_mr_jetTau1pT[iJ] );

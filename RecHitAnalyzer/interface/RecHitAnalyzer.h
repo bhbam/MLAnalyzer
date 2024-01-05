@@ -139,7 +139,7 @@
 #include "TauAnalysis/ClassicSVfit/interface/svFitHistogramAdapter.h"
 #include "TauAnalysis/ClassicSVfit/interface/FastMTT.h"
 
-#include "SimTracker/TrackerHitAssociation/interface/TrackerHitAssociator.h" 
+#include "SimTracker/TrackerHitAssociation/interface/TrackerHitAssociator.h"
 
 #include "TrackingTools/Records/interface/TrackingComponentsRecord.h"
 #include "TrackingTools/Records/interface/TransientTrackRecord.h"
@@ -188,7 +188,7 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     virtual void analyze(const edm::Event&, const edm::EventSetup&) override;
     virtual void endJob() override;
 
-    //switches 
+    //switches
     std::string mode_;  // EventLevel / JetLevel
     std::string task_;
     bool isMC_;
@@ -235,14 +235,14 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     std::string jetSFType_;      //to set
     std::string jetResPtType_;   //to set
     std::string jetResPhiType_;  //to set
- 
+
     std::vector<edm::EDGetTokenT<edm::View<reco::Candidate> > > lepTokens_;
- 
+
     typedef std::vector<reco::PFCandidate>  PFCollection;
     edm::EDGetTokenT<PFCollection> pfCollectionT_;
 
     edm::EDGetTokenT<edm::View<reco::Candidate> > pfCandidatesToken_;
-    
+
     metsig::METSignificance* metSigAlgo_;
 
     edm::EDGetTokenT<SiPixelRecHitCollection> siPixelRecHitCollectionT_;
@@ -255,8 +255,8 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     //edm::InputTag trackTags_; //used to select what tracks to read from configuration file
 
     // Diagnostic histograms
-    //TH2D * hEB_adc[EcalDataFrame::MAXSAMPLES]; 
-    //TH1D * hHBHE_depth; 
+    //TH2D * hEB_adc[EcalDataFrame::MAXSAMPLES];
+    //TH1D * hHBHE_depth;
     TH1F *h_sel;
 
     // Main TTree
@@ -266,7 +266,7 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     //std::vector<float> vEB_adc_[EcalDataFrame::MAXSAMPLES];
     //std::vector<float> vFC_inputs_;
     //math::PtEtaPhiELorentzVectorD vPho_[2];
-  
+
     // Selection and filling functions
     void branchesEvtSel         ( TTree*, edm::Service<TFileService>& );
     void branchesEvtSel_jet     ( TTree*, edm::Service<TFileService>& );
@@ -310,7 +310,7 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     void fillTRKlayersAtECALstitched( const edm::Event&, const edm::EventSetup&, unsigned int proj );
     void fillScalarInfo( const edm::Event&, const edm::EventSetup& );
 
-    //bool debug;
+    // bool debug;
     const reco::PFCandidate* getPFCand(edm::Handle<PFCollection> pfCands, float eta, float phi, float& minDr, bool debug = false);
     const reco::Track* getTrackCand(edm::Handle<reco::TrackCollection> trackCands, float eta, float phi, float& minDr, bool debug = false);
     int   getTruthLabel(const reco::PFJetRef& recJet, edm::Handle<reco::GenParticleCollection> genParticles, float dRMatch = 0.4, bool debug = false);
@@ -367,11 +367,11 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
       else if(in < -1e32 || in > 1e32)
 	return replace_value;
       return in;
-    }    
+    }
     static Measurement1D vertexDxy(const reco::VertexCompositePtrCandidate &svcand, const reco::Vertex &pv);
     static Measurement1D vertexD3d(const reco::VertexCompositePtrCandidate &svcand, const reco::Vertex &pv);
     static float vertexDdotP(const reco::VertexCompositePtrCandidate &sv, const reco::Vertex &pv);
-    
+
     int nTotal, nPassed;
     //bool debug;
 
@@ -381,22 +381,22 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     void fillByBinNumber(TH2F * histo, const std::vector<int>& phi_eta, const float& value);
     void fillTRKlayerHelper (int layer_, unsigned int proj, TH2F *hSUBDET_ECAL[][Nadjproj], TH2F *hEvt_Adj_SUBDET[][Nadjproj], const CaloGeometry* caloGeom, const float& eta, const float& phi);
     unsigned int getLayer(const DetId& detid);
-    
+
     unsigned int granularityMultiPhi[Nadjproj];
     unsigned int granularityMultiEta[Nadjproj];
-    
+
     int totalEtaBins[Nadjproj];// = totalMultiEta*(eta_nbins_HBHE);
     int totalPhiBins[Nadjproj];// = granularityMultiPhi * granularityMultiECAL*HBHE_IPHI_NUM;
     std::vector<double> adjEtaBins[Nadjproj];
     //std::vector<double> adjPhiBins[Nadjproj];
-    
+
 }; // class RecHitAnalyzer
 
 //
 // constants, enums and typedefs
 //
-static const bool debug = true;
-//static const bool debug = false;
+// static const bool debug = true;
+static const bool debug = false;
 
 static const int nEE = 2;
 static const int nTOB = 6;

@@ -14,6 +14,38 @@
 //
 // constructors and destructor
 //
+
+float Jet_pt_all_;
+float Jet_m_all_;
+float Jet_E_all_;
+float Jet_eta_all_;
+
+float Tau_pt_all_;
+float Tau_E_all_;
+float Tau_eta_all_;
+
+float Jet_pt_passtrig_;
+float Jet_m_passtrig_;
+float Jet_E_passtrig_;
+float Jet_eta_passtrig_;
+
+float Tau_pt_passtrig_;
+float Tau_E_passtrig_;
+float Tau_eta_passtrig_;
+
+bool matchPattern(const std::string& trigger, const std::string& pattern) {
+    size_t pos = pattern.find("*");
+    if (pos == std::string::npos) {
+        return trigger == pattern; // Exact match if no wildcard
+    } else {
+        std::string prefix = pattern.substr(0, pos);
+        std::string suffix = pattern.substr(pos + 1);
+        return trigger.size() >= prefix.size() + suffix.size() &&
+               trigger.substr(0, prefix.size()) == prefix &&
+               trigger.substr(trigger.size() - suffix.size()) == suffix;
+    }
+}
+
 RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
 {
   //EBRecHitCollectionT_    = consumes<EcalRecHitCollection>(iConfig.getParameter<edm::InputTag>("EBRecHitCollection"));
@@ -86,6 +118,9 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
   maxJetEta_ = iConfig.getParameter<double>("maxJetEta");
   z0PVCut_   = iConfig.getParameter<double>("z0PVCut");
 
+
+
+
   std::cout << " >> Mode set to " << mode_ << std::endl;
   if ( mode_ == "JetLevel" ) {
     doJets_ = true;
@@ -107,63 +142,49 @@ RecHitAnalyzer::RecHitAnalyzer(const edm::ParameterSet& iConfig)
   edm::Service<TFileService> fs;
   h_sel = fs->make<TH1F>("h_sel", "isSelected;isSelected;Events", 2, 0., 2.);
 
-  ///////////adjustable granularity stuff
+  h_passreftrig = fs->make<TH1F>("h_passreftrig" , "; passed ref trigger" , 2 , 0. , 2. );
+  h_met_all = fs->make<TH1F>("h_met_all" , "; E_{T}^{miss} [GeV]" , 40, 100., 500. );
+  h_met_passtrig = fs->make<TH1F>("h_met_passtrig" , "; E_{T}^{miss} [GeV]" , 40, 100., 500. );
 
-  granularityMultiPhi[0]  = iConfig.getParameter<int>("granularityMultiPhi");
-  granularityMultiEta[0]  = iConfig.getParameter<int>("granularityMultiEta");
 
-  granularityMultiPhi[1] = 3;
-  granularityMultiEta[1] = 3;
+  h_tau_att_jet_E_all          = fs->make<TH1D>("h_jet_E_all"        , "E;E;Jets"                                       ,  50,  0., 500.);
+  h_tau_att_jet_pT_all         = fs->make<TH1D>("h_jet_pT_all"       , "p_{T};p_{T};Jets"                               ,  30,  0., 300.);
+  h_tau_att_jet_eta_all        = fs->make<TH1D>("h_jet_eta_all"      , "#eta;#eta;Jets"                                 ,  30, -3.,   3.);
+  h_tau_att_jet_m0_all         = fs->make<TH1D>("h_jet_m0_all"       , "m_{jet};m_{jet};Jets"                           ,  50,  0.,  100.);
+  h_tau_att_tau_pT_all         = fs->make<TH1D>("h_tau_pT_all"       , "p_{T}^{#tau};p_{T}^{#tau};Jets"                 ,  40,  0., 200.);
+  h_tau_att_tau_E_all         = fs->make<TH1D>("h_tau_E_all"       , "E^{#tau};E^{#tau};Jets"                 ,  50,  0., 500.);
+  h_tau_att_tau_eta_all         = fs->make<TH1D>("h_tau_eta_all"       , "eta^{#tau};eta^{#tau};Jets"                 ,  30, -3.,   3.);
 
-  for (unsigned int proj=0; proj<Nadjproj; proj++)
-  {
 
-    int totalMultiEta = granularityMultiEta[proj] * granularityMultiECAL;
+  h_tau_att_jet_E_passtrig          = fs->make<TH1D>("h_jet_E_passtrig"        , "E;E;Jets"                                       ,  50,  0., 500.);
+  h_tau_att_jet_pT_passtrig         = fs->make<TH1D>("h_jet_pT_passtrig"       , "p_{T};p_{T};Jets"                               ,  30,  0., 300.);
+  h_tau_att_jet_eta_passtrig        = fs->make<TH1D>("h_jet_eta_passtrig"      , "#eta;#eta;Jets"                                 ,  30, -3.,   3.);
+  h_tau_att_jet_m0_passtrig         = fs->make<TH1D>("h_jet_m0_passtrig"       , "m_{jet};m_{jet};Jets"                           ,  50,  0.,  100.);
+  h_tau_att_tau_pT_passtrig         = fs->make<TH1D>("h_tau_pT_passtrig"       , "p_{T}^{#tau};p_{T}^{#tau};Jets"                 ,  40,  0., 200.);
+  h_tau_att_tau_E_passtrig         = fs->make<TH1D>("h_tau_E_passtrig"       , "E^{#tau};E^{#tau};Jets"                 ,  50,  0., 500.);
+  h_tau_att_tau_eta_passtrig         = fs->make<TH1D>("h_tau_eta_passtrig"       , "eta^{#tau};eta^{#tau};Jets"                 ,  30, -3.,   3.);
 
-    for (int i=0; i<eta_nbins_HBHE; i++)
-    {
-      double step=(eta_bins_HBHE[i+1]-eta_bins_HBHE[i])/totalMultiEta;
-      for (int j=0; j<totalMultiEta; j++)
-      {
-        adjEtaBins[proj].push_back(eta_bins_HBHE[i]+step*j);
-      }
-    }
-    adjEtaBins[proj].push_back(eta_bins_HBHE[eta_nbins_HBHE]);
-
-    totalEtaBins[proj] = totalMultiEta*(eta_nbins_HBHE);
-    totalPhiBins[proj] = granularityMultiPhi[proj] * granularityMultiECAL*HBHE_IPHI_NUM;
-
-  }
 
   //////////// TTree //////////
 
   // These will be use to create the actual images
   RHTree = fs->make<TTree>("RHTree", "RecHit tree");
-  if ( doJets_ ) {
-    branchesEvtSel_jet( RHTree, fs );
-  } else {
-    branchesEvtSel( RHTree, fs );
-  }
-  branchesEB           ( RHTree, fs );
-  branchesEE           ( RHTree, fs );
-  branchesHBHE         ( RHTree, fs );
-  branchesECALatHCAL   ( RHTree, fs );
-  branchesECALstitched ( RHTree, fs );
-  branchesHCALatEBEE   ( RHTree, fs );
-  branchesTracksAtEBEE(RHTree, fs);
-  branchesTracksAtECALstitched( RHTree, fs);
-  branchesPFCandsAtEBEE(RHTree, fs);
-  branchesPFCandsAtECALstitched( RHTree, fs);
-  //branchesTRKlayersAtEBEE(RHTree, fs);
-  //branchesTRKlayersAtECAL(RHTree, fs);
-  //branchesTRKvolumeAtEBEE(RHTree, fs);
-  //branchesTRKvolumeAtECAL(RHTree, fs);
-  branchesJetInfoAtECALstitched( RHTree, fs);
-  branchesScalarInfo( RHTree, fs);
-  branchesTRKlayersAtECALstitched(RHTree, fs);
 
-  // For FC inputs
-  //RHTree->Branch("FC_inputs",      &vFC_inputs_);
+  // branchesEB           ( RHTree, fs );
+   RHTree->Branch("jet_pt_all",  &Jet_pt_all_);
+   RHTree->Branch("jet_pt_passtrig",  &Jet_pt_passtrig_);
+   RHTree->Branch("jet_eta_all",  &Jet_eta_all_);
+   RHTree->Branch("jet_eta_passtrig",  &Jet_eta_passtrig_);
+   RHTree->Branch("jet_m_all",  &Jet_m_all_);
+   RHTree->Branch("jet_m_passtrig",  &Jet_m_passtrig_);
+   RHTree->Branch("jet_E_all",  &Jet_E_all_);
+   RHTree->Branch("jet_E_passtrig",  &Jet_E_passtrig_);
+   RHTree->Branch("tau_pt_all",  &Tau_pt_all_);
+   RHTree->Branch("tau_pt_passtrig",  &Tau_pt_passtrig_);
+   RHTree->Branch("tau_eta_all",  &Tau_eta_all_);
+   RHTree->Branch("tau_eta_passtrig",  &Tau_eta_passtrig_);
+   RHTree->Branch("tau_E_all",  &Tau_E_all_);
+   RHTree->Branch("tau_E_passtrig",  &Tau_E_passtrig_);
 
 } // constructor
 //
@@ -182,55 +203,179 @@ void
 RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
 
-  nTotal++;
-  using namespace edm;
- // ----- Apply event selection cuts ----- //
+nTotal++;
+using namespace edm;
+// ----- Apply event selection cuts ----- //
 
-  bool passedSelection = false;
-  if ( doJets_ ) {
-    passedSelection = runEvtSel_jet( iEvent, iSetup );
-  } else {
-    passedSelection = runEvtSel( iEvent, iSetup );
-  }
-
-  if ( !passedSelection ) {
-    if ( debug ) std::cout << "!!!!!!!!!!! DID NOT PASS EVENT/JET SELECTION !!!!!!!!!!!" << std::endl;
-    h_sel->Fill( 0. );;
-    return;
-  }
-
-  fillEB( iEvent, iSetup );
-  fillEE( iEvent, iSetup );
-  fillHBHE( iEvent, iSetup );
-  fillECALatHCAL( iEvent, iSetup );
-  fillECALstitched( iEvent, iSetup );
-  fillHCALatEBEE( iEvent, iSetup );
-  fillTracksAtEBEE( iEvent, iSetup );
-  //  for (unsigned int i=0;i<Nproj;i++)
-  //  {
-  //   fillTracksAtECALstitched( iEvent, iSetup, i );
-  //  }
-  fillPFCandsAtEBEE( iEvent, iSetup );
-  fillPFCandsAtECALstitched( iEvent, iSetup );
-  //fillTRKlayersAtEBEE( iEvent, iSetup );
-  //fillTRKlayersAtECAL( iEvent, iSetup );
-  //fillTRKvolumeAtEBEE( iEvent, iSetup );
-  //fillTRKvolumeAtECAL( iEvent, iSetup );
-  fillJetInfoAtECALstitched( iEvent, iSetup );
-  fillScalarInfo( iEvent, iSetup );
-  //  for (unsigned int i=0;i<Nhitproj;i++)
-  //  {
-  //    fillTRKlayersAtECALstitched( iEvent, iSetup, i );
-  //  }
+edm::Handle<edm::TriggerResults> hltresults;
+iEvent.getByToken(triggerResultsToken_,hltresults);
 
 
-  ////////////// 4-Momenta //////////
-  //fillFC( iEvent, iSetup );
 
-  // Fill RHTree
-  RHTree->Fill();
+edm::Handle<reco::PFJetCollection> jets;
+iEvent.getByToken(jetCollectionT_, jets);
+
+
+edm::Handle<reco::PFTauCollection> taus;
+iEvent.getByToken(tauCollectionT_, taus);
+
+edm::Handle<reco::PFMETCollection> pfmet;
+iEvent.getByToken(metCollectionT_, pfmet);
+
+
+
+float tau_sel_pT          = 10;
+bool triger_valid = true;
+
+
+
+
+std::vector<std::string> patterns = {
+     "HLT_DoubleMediumChargedIsoPFTauHPS40_Trk1_TightID_eta2p1_Reg_v*",
+     "HLT_DoubleTightChargedIsoPFTauHPS40_Trk1_eta2p1_Reg_v*",
+     "HLT_DoubleTightChargedIsoPFTauHPS35_Trk1_TightID_eta2p1_Reg_v*"
+   };
+
+if (!hltresults.isValid()) {
+   std::cout << "!!! Error in getting TriggerResults product from Event !!!" << std::endl;
+   triger_valid = false;
+ }
+
+ int ntrigs = hltresults->size();
+ edm::TriggerNames const& triggerNames = iEvent.triggerNames(*hltresults);
+ int passTrigger = 0;
+ for (int itrig = 0; itrig != ntrigs; ++itrig)
+ {
+   std::string trigName = triggerNames.triggerName(itrig);
+   // std::cout << ">>>>>>>>>>>>>>>>Available Trigger: " << trigName << std::endl;
+   bool accept = hltresults->accept(itrig);
+   if (!(accept)) continue;
+   // std::cout << " Accept >>>>>>>>>>>>>>>>>>>>" << trigName << std::endl;
+
+
+    for (const std::string& pattern : patterns) {
+      // std::cout << "Trying to Match Trigger: " << pattern << std::endl;
+
+     if (matchPattern(trigName, pattern)) {
+         std::cout << ">>>>>>>>>>>>>>>>Matched Trigger:-------- " << trigName << std::endl;
+
+         passTrigger = passTrigger+1;
+
+          }
+         }
+
+
+
+   }
+
+ std::cout << " >>number of trigger passed >>>>>>>>>>>>>>>>>" << passTrigger << std::endl;
+
+float Jet_pt=-9999.9999;
+float Jet_m=-9999.9999;
+float Jet_E=-9999.9999;
+float Jet_eta= -9999.9999;
+
+float Tau_pt=-9999.9999;
+float Tau_E=-9999.9999;
+float Tau_eta= -9999.9999;
+
+Jet_pt_all_= -9999.9999;
+Jet_m_all_= -9999.9999;
+Jet_E_all_= -9999.9999;
+Jet_eta_all_= -9999.9999;
+
+Tau_pt_all_= -9999.9999;
+Tau_E_all_= -9999.9999;
+Tau_eta_all_= -9999.9999;
+
+Jet_pt_passtrig_= -9999.9999;
+Jet_m_passtrig_= -9999.9999;
+Jet_E_passtrig_= -9999.9999;
+Jet_eta_passtrig_= -9999.9999;
+
+Tau_pt_passtrig_= -9999.9999;
+Tau_E_passtrig_= -9999.9999;
+Tau_eta_passtrig_= -9999.9999;
+
+if (triger_valid)
+{
+
+
+
+
+for ( unsigned iJ(0); iJ != jets->size(); ++iJ )
+{
+    reco::PFJetRef iJet( jets, iJ );
+    if ( std::abs(iJet->pt())  < minJetPt_ ) continue;
+    if ( std::abs(iJet->eta()) > maxJetEta_ ) continue;
+    if (Jet_pt < iJet->pt())
+    {
+      Jet_pt = iJet->pt();
+      Jet_E = iJet->energy();
+      Jet_m = iJet->mass();
+      Jet_eta = iJet->eta();
+    }
+// std::cout << " >>Jet_pt_all >>>>>>>>>>>>>>>>>>>>>>" << iJet->pt() << std::endl;
+
+} // jet loop
+Jet_pt_all_ = Jet_pt;
+Jet_eta_all_ = Jet_eta;
+Jet_E_all_ = Jet_E;
+Jet_m_all_ = Jet_m;
+
+for ( unsigned iT(0); iT != taus->size(); ++iT )
+{
+      reco::PFTauRef iTau( taus, iT );
+      if ( iTau->pt() < tau_sel_pT ) continue;
+      if (Tau_pt < iTau->pt())
+    {
+      Tau_pt = iTau->pt();
+      Tau_E = iTau->energy();
+      Tau_eta = iTau->eta();
+    }
+}// tau loop
+Tau_pt_all_ = Tau_pt;
+Tau_eta_all_ = Tau_eta;
+Tau_E_all_ = Tau_E;
+h_passreftrig->Fill(1);
+float met = ( pfmet->front() ).pt();;
+
+h_met_all->Fill(met);
+h_tau_att_jet_pT_all->Fill(Jet_pt);
+h_tau_att_jet_E_all->Fill(Jet_E);
+h_tau_att_jet_eta_all->Fill(Jet_eta);
+h_tau_att_jet_m0_all->Fill(Jet_m);
+h_tau_att_tau_pT_all->Fill(Tau_pt);
+h_tau_att_tau_E_all->Fill(Tau_E);
+h_tau_att_tau_eta_all->Fill(Tau_eta);
+
+if (passTrigger > 0){
+  h_met_passtrig->Fill(met);
+  h_tau_att_jet_pT_passtrig->Fill(Jet_pt);
+  h_tau_att_jet_E_passtrig->Fill(Jet_E);
+  h_tau_att_jet_eta_passtrig->Fill(Jet_eta);
+  h_tau_att_jet_m0_passtrig->Fill(Jet_m);
+  h_tau_att_tau_pT_passtrig->Fill(Tau_pt);
+  h_tau_att_tau_E_passtrig->Fill(Tau_E);
+  h_tau_att_tau_eta_passtrig->Fill(Tau_eta);
+
+
+  Jet_pt_passtrig_ = Jet_pt;
+  Jet_eta_passtrig_ = Jet_eta;
+  Jet_E_passtrig_ = Jet_E;
+  Jet_m_passtrig_ = Jet_m;
+  Tau_pt_passtrig_ = Tau_pt;
+  Tau_eta_passtrig_ = Tau_eta;
+  Tau_E_passtrig_ = Tau_E;
+ }
+// std::cout << " >>Jet_pt_all_ >>>>>>>>>>>>>>>>>>>>>>" << Jet_pt_all_ << std::endl;
+// std::cout << " >>Jet_pt_passtrig_ >>>>>>>>>>>>>>>>>" << Jet_pt_passtrig_ << std::endl;
+ RHTree->Fill();
+ nPassed++;
+} // triger_valid
+
   h_sel->Fill( 1. );
-  nPassed++;
+
 
 } // analyze()
 

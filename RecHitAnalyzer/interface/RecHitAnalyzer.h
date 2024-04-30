@@ -249,6 +249,28 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     //TH2D * hEB_adc[EcalDataFrame::MAXSAMPLES];
     //TH1D * hHBHE_depth;
     TH1F *h_sel;
+    TH1F *h_passreftrig;
+    TH1F *h_met_all;
+    TH1F *h_met_passtrig;
+
+    
+    TH1D *h_tau_att_jet_pT_all;
+    TH1D *h_tau_att_jet_E_all;
+    TH1D *h_tau_att_jet_eta_all;
+    TH1D *h_tau_att_jet_m0_all;
+    TH1D *h_tau_att_tau_pT_all;
+    TH1D *h_tau_att_tau_E_all;
+    TH1D *h_tau_att_tau_eta_all;
+
+    
+    TH1D *h_tau_att_jet_pT_passtrig;
+    TH1D *h_tau_att_jet_E_passtrig;
+    TH1D *h_tau_att_jet_eta_passtrig;
+    TH1D *h_tau_att_jet_m0_passtrig;
+    TH1D *h_tau_att_tau_pT_passtrig;
+    TH1D *h_tau_att_tau_E_passtrig;
+    TH1D *h_tau_att_tau_eta_passtrig;
+    
 
     // Main TTree
     TTree* RHTree;
@@ -314,7 +336,7 @@ class RecHitAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     std::string task_;
     bool isSignal_;
     bool isW_;
-    bool isBoostedTop_;  
+    bool isBoostedTop_;
     bool doJets_;
     int  nJets_;
     double minJetPt_;

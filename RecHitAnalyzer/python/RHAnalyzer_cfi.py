@@ -62,11 +62,11 @@ fevt = cms.EDAnalyzer('RecHitAnalyzer'
     # , task                           = cms.string("tau_classification")
     #, task                           = cms.string("jet_ele_classification")
     , task                           = cms.string("dijet_ditau")
-    , isSignal                       = cms.bool(False)
+    , isSignal                       = cms.bool(True)
     , isW                            = cms.bool(False)
     , isBoostedTop                   = cms.bool(False)
     , nJets     = cms.int32(-1)
-    , minJetPt  = cms.double(15.)
+    , minJetPt  = cms.double(0.)
     , maxJetEta = cms.double(2.4)
     , z0PVCut   = cms.double(0.1)
 
